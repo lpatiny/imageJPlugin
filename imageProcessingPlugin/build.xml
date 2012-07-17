@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="imageJ" name="Create Runnable Jar for Project imagePlugin">
+	
+	<taskdef resource="proguard/ant/task.properties" classpath="../library/lib/proguard450b4.jar" />
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="imageJ-full">
+        <jar destfile="./jars/imageJ-full.jar" filesetmanifest="mergewithoutmain">
+            <fileset dir="bin">
+            	<exclude name="**/test/**" />
+            	<exclude name="*/test/*.class" />
+            	<exclude name="**/*.jpg" />
+            	<include name="**/*.class" />
+            	<include name="**/*.js" />
+            	<include name="**/*.txt" />
+            	<include name="plugin.properties" />
+            </fileset>
+        	<zipfileset excludes="META-INF/*.SF" src="./lib/ij.jar"/>
+        </jar>
+    </target>
+	
+	<target name="imageJ" depends="imageJ-full">
+		<copy todir="/usr/local/script/plugins">
+		  <fileset dir="./jars/"
+		           includes="imageJ-full.jar"
+		  />
+		</copy>
+	</target>
+</project>
