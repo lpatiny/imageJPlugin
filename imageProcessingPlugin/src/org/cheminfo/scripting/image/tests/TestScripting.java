@@ -35,7 +35,7 @@ public class TestScripting {
 	public static void main(String[] args) {
 		ScriptingInstance interpreter = new ScriptingInstance("jars/");
 		interpreter.setSafePath("./");
-		String script = getContents(new File("XTC/imagetestcopy.js"));
+		String script = getContents(new File("XTC/imagetesttexture.js"));
 		JSONObject result = interpreter.runScript(script);
 		System.out.println(result);
 		

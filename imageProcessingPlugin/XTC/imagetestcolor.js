@@ -5,6 +5,6 @@ var list = dir("/XTC/images/png", {
 var size = 1;
 for ( var i = 0; i < size; i++) {
 	var image = IJ.load(list[i]);
-	image.contrast("{}");
+	image.color("{}");
 	image.save(list[i] + "-1", "{quality:100}");
 }

@@ -1,19 +1,27 @@
 package org.cheminfo.scripting.image;
 
+import java.awt.Color;
+import java.awt.Rectangle;
 import java.io.File;
 import java.util.Locale;
 
 import org.cheminfo.function.Function;
 import org.cheminfo.function.scripting.SecureFileManager;
+import org.cheminfo.scripting.image.filters.TamuraCoarsenessExtractor;
+import org.cheminfo.scripting.image.filters.TamuraContrastExtractor;
+import org.cheminfo.scripting.image.filters.TamuraDirectionalityExtractor;
 import org.json.JSONObject;
 
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
 import ij.gui.NewImage;
 import ij.io.FileSaver;
 import ij.plugin.ContrastEnhancer;
 import ij.plugin.Duplicator;
 import ij.process.Blitter;
 import ij.process.ColorProcessor;
+import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 
 /**
@@ -116,43 +124,99 @@ public class EIJ extends ImagePlus implements Cloneable {
 			return false;
 	}
 
-	static String updateExtension(String path, String extension) {
-		if (path == null)
-			return null;
-		int dotIndex = path.lastIndexOf(".");
-		int separatorIndex = path.lastIndexOf(File.separator);
-		if (dotIndex >= 0 && dotIndex > separatorIndex
-				&& (path.length() - dotIndex) <= 5) {
-			if (dotIndex + 1 < path.length()
-					&& Character.isDigit(path.charAt(dotIndex + 1)))
-				path += extension;
-			else
-				path = path.substring(0, dotIndex) + extension;
-		} else
-			path += extension;
-		return path;
-	}
-
 	/**
-	 * This function scales the image to the specified width and height
+	 * This function scales the image to the specified width and height. Posible
+	 * values: 200x100: resize to exactly 200x100; x100: proportional resize to
+	 * 100 points height; 200x: proportional resize to 200 points witdh; 50%
+	 * proportional resize to 50%
 	 * 
-	 * @param newWidth
-	 * @param newHeight
+	 * @param size
+	 *            (wxh, p%)
+	 * @param options
+	 *            {method:(0->None,1->Bilinear, 2->Bicubic), background:(name
+	 *            background color), average:(y/n-> Average when downsizing)}
 	 */
-	public void resize(String size, Object options) {
-		ImageProcessor im = this.getProcessor();
-		String[] values = size.toLowerCase().split("x");
-		int newWidth = Integer.parseInt(values[0]);
-		int newHeight = Integer.parseInt(values[1]);
-		this.setImage(im.createImage()
-				.getScaledInstance(newWidth, newHeight, 1));
+	public boolean resize(String size, Object options) {
+		JSONObject parameters = Function.checkParameter(options);
+		int interpolationMethod = parameters.optInt("method",
+				ImageProcessor.BILINEAR);
+		String backgroundColor = parameters.optString("background", "");
+		String average = parameters.optString("average", "n");
+		boolean averageWhenDownsizing = false;
+		boolean fillWithBackground = false;
+		double bgValue = 0.0;
+		if (fillWithBackground) {
+			Color bgc = getBackgroundColor(backgroundColor);
+			if (this.getBitDepth() == 8)
+				bgValue = ip.getBestIndex(bgc);
+			else if (this.getBitDepth() == 24)
+				bgValue = bgc.getRGB();
+		} else
+			bgValue = 0.0;
+		if (average.toLowerCase().equals("y")) {
+			averageWhenDownsizing = true;
+		}
+		ip.setInterpolationMethod(interpolationMethod);
+		ip.setBackgroundValue(bgValue);
+		int newHeight = 0;
+		int newWidth = 0;
+		if (size.contains("%")) {
+			Double percentage = 0.0;
+			try {
+				percentage = Double.parseDouble(size.substring(0,
+						size.indexOf("%")));
+				percentage = percentage / 100;
+			} catch (Exception ex) {
+
+			}
+			if (percentage <= 0.0) {
+				return false;
+			}
+			newHeight = (int) (this.getHeight() * percentage);
+			newWidth = (int) (this.getWidth() * percentage);
+		} else {
+			String[] values = size.toLowerCase().split("x");
+			if (values.length > 0) {
+				try {
+					newWidth = Integer.parseInt(values[0].trim());
+				} catch (Exception ex) {
+				}
+				try {
+					newHeight = Integer.parseInt(values[1].trim());
+				} catch (Exception ex) {
+				}
+
+				if (newHeight == 0 && newWidth == 0) {
+					return false;
+				} else if (newHeight == 0) {
+					newHeight = (int) (newWidth * (double) this.getHeight() / this
+							.getWidth());
+				} else if (newWidth == 0) {
+					newWidth = (int) (newHeight * (double) this.getWidth() / this
+							.getHeight());
+				}
+			}
+		}
+		if ((newHeight != this.getHeight() || newWidth != this.getWidth())
+				&& (newHeight > 0 && newWidth > 0)) {
+			this.setProcessor(this.getProcessor().resize(newWidth, newHeight,
+					averageWhenDownsizing));
+			return true;
+		}
+		return false;
+	}
+
+	private Color getBackgroundColor(String backgroundColor) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/**
-	 * This function contrast the image
+	 * Apply a contrast filter to the image
 	 * 
 	 * @param options
-	 *            {saturated:(0-100), equalize:(y/n)}
+	 *            {saturated:(0-100), equalize:(y/n)}, if equalize is true
+	 *            equalize the image, either stretch image histogram
 	 */
 	public void contrast(Object options) {
 		ContrastEnhancer ce = new ContrastEnhancer();
@@ -205,6 +269,9 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return result;
 	}
 
+	/**
+	 * Apply a edge filter to the image
+	 */
 	public void edge() {
 		ImageProcessor ip = this.getProcessor();
 		ip.convertToByte(true);
@@ -212,113 +279,84 @@ public class EIJ extends ImagePlus implements Cloneable {
 		ip.findEdges();
 	}
 
-	public void color() {
-
-	}
-
-	public void grey() {
-		ImageProcessor ip = this.getProcessor();
-		ip.convertToByte(true);
-	}
-
-	public void texture(Object options) {
+	/**
+	 * Apply a color filter to the image
+	 * 
+	 * @param options
+	 *            {nbColor:(2-256)}
+	 */
+	public void color(Object options) {
 		JSONObject parameters = Function.checkParameter(options);
-		int maxWindowSize = parameters.optInt("maxWindowSize", 6);
-
-		ImageProcessor ip = this.getProcessor();
-		ip.convertToByte(true);
-
-		byte[] coarseness = new byte[width * height];
-		int margin = 0; // in pixels
-
-		int offset, i;
-
-		for (int y = margin; y < (height - margin); y++) {
-			offset = y * width;
-			for (int x = margin; x < (width - margin); x++) {
-				i = offset + x;
-				coarseness[i] = (byte) selectHighestDiff(x, y, maxWindowSize);
-			}
-		}
-
-		this.getProcessor().setPixels(coarseness);
-	}
-
-	private int selectHighestDiff(int x, int y, int maxWindowSize) {
-		int value;
-		int maxValue = 0;
-		boolean horizontal = true;
-		boolean vertical = false;
-		int maxK = 0;
-
-		for (int k = 1; k <= maxWindowSize; k++) {
-			value = diffBetweenNeighborhoods(x, y, k, horizontal);
-			if (value > maxValue) {
-				maxValue = value;
-				maxK = k;
-			}
-
-			value = diffBetweenNeighborhoods(x, y, k, vertical);
-			if (value > maxValue) {
-				maxValue = value;
-				maxK = k;
-			}
-		}
-		int normalizedValue = 0;
-		normalizedValue = (maxK) * (255 / maxWindowSize);
-		return normalizedValue;
+		int nColors = parameters.optInt("nbColor", 256);
+		ImageConverter ic = new ImageConverter(this);
+		ic.convertRGBtoIndexedColor(nColors);
 	}
 
 	/**
-	 * Calculate the difference between the non overlapping neighborhoods of a
-	 * given pixel
-	 * 
-	 * @param x
-	 *            X coordinate of pixel
-	 * @param y
-	 *            Y coordinate of pixel
-	 * @param windowSize
-	 *            Size of the neighborhood
-	 * @param horizontal
-	 *            The direction of analysis: Horizontal (true) or Vertical
-	 *            (false)
-	 * @return
+	 * Apply a grey filter to the image
 	 */
-	private int diffBetweenNeighborhoods(int x, int y, int windowSize,
-			boolean horizontal) {
-		int value = 0;
-		int valueA, valueB;
-		int twoKMinusOne = (int) Math.pow(2, windowSize - 1);
-		int limit = (int) Math.pow(2, windowSize);
-
-		if (horizontal && !(x + limit > this.getWidth() || x - limit < 0)) {
-			valueA = average(x + twoKMinusOne, y, windowSize);
-			valueB = average(x - twoKMinusOne, y, windowSize);
-			value = Math.abs(valueA - valueB);
-		}
-		if (!horizontal && !(y + limit > this.getHeight() || y - limit < 0)) {
-			valueA = average(x, y + twoKMinusOne, windowSize);
-			valueB = average(x, y - twoKMinusOne, windowSize);
-			value = Math.abs(valueA - valueB);
-		}
-		return value;
+	public void grey() {
+		ImageConverter ic = new ImageConverter(this);
+		ic.convertToGray8();
 	}
 
-	private int average(int x, int y, int windowSize) {
-		int limit = (int) Math.pow(2, windowSize);
-		int twoKMinusOne = (int) Math.pow(2, windowSize - 1);
-		int totalPixels = (int) Math.pow(2, 2 * windowSize);
-		int sum = 0;
-		int value;
+	/**
+	 * Apply a texture filter to the image
+	 * 
+	 */
+	public void texture() {
+		ImageProcessor ip = this.getProcessor();
+		ip.convertToByte(true);
 
-		for (int j = 1; j < limit; j++) {
-			for (int i = 1; i < limit; i++) {
-				value = this.getProcessor().getPixel(x - twoKMinusOne + i,
-						y - twoKMinusOne + j);
-				sum += value;
-			}
-		}
-		return sum / totalPixels;
+		/* Tamura Coarseness */
+		EIJ eCoarseness = this.copy();
+		TamuraCoarsenessExtractor tamuraCoarseness = new TamuraCoarsenessExtractor();
+		tamuraCoarseness.setCoarse(eCoarseness);
+		byte[] coarseness = tamuraCoarseness.performExtraction();
+
+		eCoarseness.getProcessor().setPixels(coarseness);
+
+		/* Tamura Contrast */
+		EIJ eContrast = this.copy();
+		TamuraContrastExtractor tamuraContrast = new TamuraContrastExtractor();
+		tamuraContrast.setContrast(eContrast);
+		byte[] contrast = tamuraContrast.performExtraction();
+		eContrast.getProcessor().setPixels(contrast);
+
+		EIJ eDirectionality = this.copy();
+		TamuraDirectionalityExtractor tamuraDirectionality = new TamuraDirectionalityExtractor();
+		tamuraDirectionality.setAngles(eDirectionality);
+		byte[] directionality = tamuraDirectionality.performExtraction();
+		eDirectionality.getProcessor().setPixels(directionality);
+
+		ImageStack stack1 = new ImageStack(width, height);
+		stack1.addSlice("directionality", eDirectionality.getProcessor());
+		ImageStack stack2 = new ImageStack(width, height);
+		stack2.addSlice("coarseness", eCoarseness.getProcessor());
+		ImageStack stack3 = new ImageStack(width, height);
+		stack3.addSlice("contrast", eContrast.getProcessor());
+
+		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
+		ImageStack result = merge.mergeStacks(width, height, 1, stack1, stack2,
+				stack3, true);
+		int[] pixels = (int[]) result.getPixels(1);
+		this.getProcessor().setPixels(pixels);
 	}
 
+	static String updateExtension(String path, String extension) {
+		if (path == null)
+			return null;
+		int dotIndex = path.lastIndexOf(".");
+		int separatorIndex = path.lastIndexOf(File.separator);
+		if (dotIndex >= 0 && dotIndex > separatorIndex
+				&& (path.length() - dotIndex) <= 5) {
+			if (dotIndex + 1 < path.length()
+					&& Character.isDigit(path.charAt(dotIndex + 1)))
+				path += extension;
+			else
+				path = path.substring(0, dotIndex) + extension;
+		} else
+			path += extension;
+		return path;
+	}
 }
