@@ -7,9 +7,11 @@ import java.util.Locale;
 
 import org.cheminfo.function.Function;
 import org.cheminfo.function.scripting.SecureFileManager;
-import org.cheminfo.scripting.image.filters.TamuraCoarsenessExtractor;
-import org.cheminfo.scripting.image.filters.TamuraContrastExtractor;
-import org.cheminfo.scripting.image.filters.TamuraDirectionalityExtractor;
+import org.cheminfo.scripting.image.filters.InvariantFeatureHistogramFilter;
+import org.cheminfo.scripting.image.filters.LocalBinaryPartitionFilter;
+import org.cheminfo.scripting.image.filters.TamuraCoarsenessFilter;
+import org.cheminfo.scripting.image.filters.TamuraContrastFilter;
+import org.cheminfo.scripting.image.filters.TamuraDirectionalityFilter;
 import org.json.JSONObject;
 
 import ij.ImagePlus;
@@ -305,42 +307,12 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * 
 	 */
 	public void texture() {
-		ImageProcessor ip = this.getProcessor();
-		ip.convertToByte(true);
-
-		/* Tamura Coarseness */
-		EIJ eCoarseness = this.copy();
-		TamuraCoarsenessExtractor tamuraCoarseness = new TamuraCoarsenessExtractor();
-		tamuraCoarseness.setCoarse(eCoarseness);
-		byte[] coarseness = tamuraCoarseness.performExtraction();
-
-		eCoarseness.getProcessor().setPixels(coarseness);
-
-		/* Tamura Contrast */
-		EIJ eContrast = this.copy();
-		TamuraContrastExtractor tamuraContrast = new TamuraContrastExtractor();
-		tamuraContrast.setContrast(eContrast);
-		byte[] contrast = tamuraContrast.performExtraction();
-		eContrast.getProcessor().setPixels(contrast);
-
-		EIJ eDirectionality = this.copy();
-		TamuraDirectionalityExtractor tamuraDirectionality = new TamuraDirectionalityExtractor();
-		tamuraDirectionality.setAngles(eDirectionality);
-		byte[] directionality = tamuraDirectionality.performExtraction();
-		eDirectionality.getProcessor().setPixels(directionality);
-
-		ImageStack stack1 = new ImageStack(width, height);
-		stack1.addSlice("directionality", eDirectionality.getProcessor());
-		ImageStack stack2 = new ImageStack(width, height);
-		stack2.addSlice("coarseness", eCoarseness.getProcessor());
-		ImageStack stack3 = new ImageStack(width, height);
-		stack3.addSlice("contrast", eContrast.getProcessor());
-
-		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
-		ImageStack result = merge.mergeStacks(width, height, 1, stack1, stack2,
-				stack3, true);
-		int[] pixels = (int[]) result.getPixels(1);
-		this.getProcessor().setPixels(pixels);
+		/*
+		 * ImageProcessor ip = this.getProcessor(); ip.convertToByte(true);
+		 */
+		tamuraTexture();
+		//invariantTexture();
+		//localBinaryTexture();
 	}
 
 	static String updateExtension(String path, String extension) {
@@ -358,5 +330,82 @@ public class EIJ extends ImagePlus implements Cloneable {
 		} else
 			path += extension;
 		return path;
+	}
+
+	public void tamuraTexture() {
+		/* Tamura Coarseness */
+		ImagePlus eCoarseness = this.copy();
+		TamuraCoarsenessFilter tamuraCoarseness = new TamuraCoarsenessFilter();
+		tamuraCoarseness.setCoarse(eCoarseness);
+		byte[] coarseness = tamuraCoarseness.performExtraction();
+
+		ImagePlus iCoarseness = NewImage.createByteImage("Coarseness", width,
+				height, 1, NewImage.FILL_BLACK);
+		iCoarseness.getProcessor().setPixels(coarseness);
+
+		/* Tamura Contrast */
+		ImagePlus eContrast = this.copy();
+		TamuraContrastFilter tamuraContrast = new TamuraContrastFilter();
+		tamuraContrast.setContrast(eContrast);
+		byte[] contrast = tamuraContrast.performExtraction();
+
+		ImagePlus iContrast = NewImage.createByteImage("Contrast", width,
+				height, 1, NewImage.FILL_BLACK);
+		iContrast.getProcessor().setPixels(contrast);
+
+		ImagePlus eDirectionality = this.copy();
+		TamuraDirectionalityFilter tamuraDirectionality = new TamuraDirectionalityFilter();
+		tamuraDirectionality.setAngles(eDirectionality);
+		byte[] directionality = tamuraDirectionality.performExtraction();
+
+		ImagePlus iDirectionality = NewImage.createByteImage("Directionality",
+				width, height, 1, NewImage.FILL_BLACK);
+		iDirectionality.getProcessor().setPixels(directionality);
+
+		ImageStack stack1 = new ImageStack(width, height);
+		stack1.addSlice("directionality", iDirectionality.getProcessor());
+		ImageStack stack2 = new ImageStack(width, height);
+		stack2.addSlice("coarseness", iCoarseness.getProcessor());
+		ImageStack stack3 = new ImageStack(width, height);
+		stack3.addSlice("contrast", iContrast.getProcessor());
+
+		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
+		ImageStack result = merge.mergeStacks(width, height, 1, stack1, stack2,
+				stack3, true);
+		int[] pixels = (int[]) result.getPixels(1);
+		this.getProcessor().setPixels(pixels);
+	}
+
+	public void invariantTexture() {
+		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter();
+		invariantTexture.setFloatImage(this.copy());
+		ImagePlus features = NewImage.createByteImage("Invariant", width,
+				height, 1, NewImage.FILL_BLACK);
+		features.getProcessor().setPixels(invariantTexture.performExtraction());
+		ImageStack stack1 = new ImageStack(width, height);
+		stack1.addSlice("features", features.getProcessor());
+
+		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
+		ImageStack result = merge.mergeStacks(width, height, 1, stack1, null,
+				null, true);
+		int[] pixels = (int[]) result.getPixels(1);
+		this.getProcessor().setPixels(pixels);
+	}
+
+	public void localBinaryTexture() {
+		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter();
+		localbinary.setLbpImg(this.copy());
+		ImagePlus lbpImg = NewImage.createByteImage("LBP", width, height, 1,
+				NewImage.FILL_BLACK);
+		lbpImg.getProcessor().setPixels(localbinary.performExtraction());
+		ImageStack stack1 = new ImageStack(width, height);
+		stack1.addSlice("lbpImg", lbpImg.getProcessor());
+
+		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
+		ImageStack result = merge.mergeStacks(width, height, 1, stack1, null,
+				null, true);
+		int[] pixels = (int[]) result.getPixels(1);
+		this.getProcessor().setPixels(pixels);
+
 	}
 }

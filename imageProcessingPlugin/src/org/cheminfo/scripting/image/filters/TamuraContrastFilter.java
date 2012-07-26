@@ -7,7 +7,7 @@ import ij.process.ImageProcessor;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
-public class TamuraContrastExtractor {
+public class TamuraContrastFilter {
 	private ImagePlus contrast;
 	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;

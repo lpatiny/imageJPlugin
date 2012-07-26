@@ -5,7 +5,7 @@ import ij.gui.NewImage;
 import ij.process.Blitter;
 import ij.process.ImageProcessor;
 
-public class TamuraDirectionalityExtractor {
+public class TamuraDirectionalityFilter {
 	private ImagePlus angles;
 	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;

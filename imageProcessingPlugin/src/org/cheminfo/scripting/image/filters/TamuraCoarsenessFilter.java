@@ -10,7 +10,7 @@ import java.util.ArrayList;
 /**
  * @author jccaicedo
  */
-public class TamuraCoarsenessExtractor {
+public class TamuraCoarsenessFilter {
 	private int maxWindowSize = 6;
 	private ImagePlus coarse;
 	private ImageProcessor colorImage;
