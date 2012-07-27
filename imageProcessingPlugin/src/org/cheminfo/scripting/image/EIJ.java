@@ -37,6 +37,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	private String basedir;
 	private String key;
+	int texture = 2;
 
 	/**
 	 * The constructor. The filename have to be the full path to file to be
@@ -218,7 +219,8 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * 
 	 * @param options
 	 *            {saturated:(0-100), equalize:(y/n)}, if equalize is true
-	 *            equalize the image, either stretch image histogram
+	 *            equalize the image, either stretch image histogram using
+	 *            saturated
 	 */
 	public void contrast(Object options) {
 		ContrastEnhancer ce = new ContrastEnhancer();
@@ -275,9 +277,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * Apply a edge filter to the image
 	 */
 	public void edge() {
-		ImageProcessor ip = this.getProcessor();
-		ip.convertToByte(true);
-		ip.copyBits(ip, 0, 0, Blitter.COPY);
+		this.grey();
 		ip.findEdges();
 	}
 
@@ -307,12 +307,19 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * 
 	 */
 	public void texture() {
-		/*
-		 * ImageProcessor ip = this.getProcessor(); ip.convertToByte(true);
-		 */
-		tamuraTexture();
-		//invariantTexture();
-		//localBinaryTexture();
+		switch (texture) {
+		case 0:
+			tamuraTexture();
+			break;
+		case 1:
+			this.grey();
+			invariantTexture();
+			break;
+		case 2:
+			this.grey();
+			localBinaryTexture();
+			break;
+		}
 	}
 
 	static String updateExtension(String path, String extension) {
@@ -334,9 +341,9 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	public void tamuraTexture() {
 		/* Tamura Coarseness */
-		ImagePlus eCoarseness = this.copy();
-		TamuraCoarsenessFilter tamuraCoarseness = new TamuraCoarsenessFilter();
-		tamuraCoarseness.setCoarse(eCoarseness);
+
+		TamuraCoarsenessFilter tamuraCoarseness = new TamuraCoarsenessFilter(
+				this.getProcessor().convertToByte(true));
 		byte[] coarseness = tamuraCoarseness.performExtraction();
 
 		ImagePlus iCoarseness = NewImage.createByteImage("Coarseness", width,
@@ -344,18 +351,17 @@ public class EIJ extends ImagePlus implements Cloneable {
 		iCoarseness.getProcessor().setPixels(coarseness);
 
 		/* Tamura Contrast */
-		ImagePlus eContrast = this.copy();
-		TamuraContrastFilter tamuraContrast = new TamuraContrastFilter();
-		tamuraContrast.setContrast(eContrast);
+
+		TamuraContrastFilter tamuraContrast = new TamuraContrastFilter(this
+				.getProcessor().convertToByte(true));
 		byte[] contrast = tamuraContrast.performExtraction();
 
 		ImagePlus iContrast = NewImage.createByteImage("Contrast", width,
 				height, 1, NewImage.FILL_BLACK);
 		iContrast.getProcessor().setPixels(contrast);
 
-		ImagePlus eDirectionality = this.copy();
-		TamuraDirectionalityFilter tamuraDirectionality = new TamuraDirectionalityFilter();
-		tamuraDirectionality.setAngles(eDirectionality);
+		TamuraDirectionalityFilter tamuraDirectionality = new TamuraDirectionalityFilter(
+				this.getProcessor().convertToByte(true));
 		byte[] directionality = tamuraDirectionality.performExtraction();
 
 		ImagePlus iDirectionality = NewImage.createByteImage("Directionality",
@@ -364,8 +370,10 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 		ImageStack stack1 = new ImageStack(width, height);
 		stack1.addSlice("directionality", iDirectionality.getProcessor());
+
 		ImageStack stack2 = new ImageStack(width, height);
 		stack2.addSlice("coarseness", iCoarseness.getProcessor());
+
 		ImageStack stack3 = new ImageStack(width, height);
 		stack3.addSlice("contrast", iContrast.getProcessor());
 
@@ -374,38 +382,21 @@ public class EIJ extends ImagePlus implements Cloneable {
 				stack3, true);
 		int[] pixels = (int[]) result.getPixels(1);
 		this.getProcessor().setPixels(pixels);
+		this.grey();
 	}
 
 	public void invariantTexture() {
-		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter();
-		invariantTexture.setFloatImage(this.copy());
-		ImagePlus features = NewImage.createByteImage("Invariant", width,
-				height, 1, NewImage.FILL_BLACK);
-		features.getProcessor().setPixels(invariantTexture.performExtraction());
-		ImageStack stack1 = new ImageStack(width, height);
-		stack1.addSlice("features", features.getProcessor());
-
-		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
-		ImageStack result = merge.mergeStacks(width, height, 1, stack1, null,
-				null, true);
-		int[] pixels = (int[]) result.getPixels(1);
-		this.getProcessor().setPixels(pixels);
+		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter(
+				this.getProcessor().convertToByte(true));
+		byte[] bytes = invariantTexture.performExtraction();
+		this.getProcessor().setPixels(bytes);
 	}
 
 	public void localBinaryTexture() {
-		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter();
-		localbinary.setLbpImg(this.copy());
-		ImagePlus lbpImg = NewImage.createByteImage("LBP", width, height, 1,
-				NewImage.FILL_BLACK);
-		lbpImg.getProcessor().setPixels(localbinary.performExtraction());
-		ImageStack stack1 = new ImageStack(width, height);
-		stack1.addSlice("lbpImg", lbpImg.getProcessor());
-
-		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
-		ImageStack result = merge.mergeStacks(width, height, 1, stack1, null,
-				null, true);
-		int[] pixels = (int[]) result.getPixels(1);
-		this.getProcessor().setPixels(pixels);
+		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter(
+				this.getProcessor().convertToByte(true));
+		byte[] bytes = localbinary.performExtraction();
+		this.getProcessor().setPixels(bytes);
 
 	}
 }

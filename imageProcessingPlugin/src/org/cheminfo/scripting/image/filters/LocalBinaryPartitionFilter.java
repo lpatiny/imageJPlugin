@@ -7,14 +7,13 @@ import ij.process.ImageProcessor;
 public class LocalBinaryPartitionFilter {
 	private int width;
 	private int height;
-	private ImagePlus lbpImg;
 	private ImageProcessor grayImage;
 
-	public LocalBinaryPartitionFilter() {
+	public LocalBinaryPartitionFilter(ImageProcessor grayImage) {
+		this.grayImage = grayImage;
 	}
 
 	public byte[] performExtraction() {
-		grayImage = lbpImg.getProcessor().convertToByte(true);
 		width = grayImage.getWidth();
 		height = grayImage.getHeight();
 		byte[] pixels = (byte[]) grayImage.getPixels();
@@ -71,13 +70,5 @@ public class LocalBinaryPartitionFilter {
 				binary = "0" + binary;
 		}
 		return (byte) code;
-	}
-
-	public ImagePlus getLbpImg() {
-		return lbpImg;
-	}
-
-	public void setLbpImg(ImagePlus lbpImg) {
-		this.lbpImg = lbpImg;
 	}
 }

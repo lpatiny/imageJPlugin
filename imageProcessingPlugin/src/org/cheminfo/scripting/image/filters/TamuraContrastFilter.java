@@ -8,14 +8,14 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 
 public class TamuraContrastFilter {
-	private ImagePlus contrast;
-	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;
 	int margin = 6; // in pixels
 
+	public TamuraContrastFilter(ImageProcessor grayImage) {
+		this.grayImage = grayImage;
+	}
+
 	public byte[] performExtraction() {
-		colorImage = contrast.getProcessor().convertToRGB();
-		grayImage = contrast.getProcessor().convertToByte(true);
 		int width = getGrayImage().getWidth();
 		int height = getGrayImage().getHeight();
 		double[] contrastArray = new double[width * height];
@@ -106,25 +106,6 @@ public class TamuraContrastFilter {
 			hc = margin + height - y;
 
 		r.setBounds(xc, yc, wc, hc);
-	}
-
-	/**
-	 * @param contrast
-	 *            the contrast to set
-	 */
-	public void setContrast(ImagePlus contrast) {
-		this.contrast = contrast;
-	}
-
-	/**
-	 * @return the contrast
-	 */
-	public ImagePlus getContrast() {
-		return contrast;
-	}
-
-	public ImageProcessor getColorImage() {
-		return colorImage;
 	}
 
 	public ImageProcessor getGrayImage() {

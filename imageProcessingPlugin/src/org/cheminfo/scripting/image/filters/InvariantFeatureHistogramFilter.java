@@ -6,25 +6,19 @@ import ij.process.Blitter;
 import ij.process.ImageProcessor;
 
 public class InvariantFeatureHistogramFilter {
-	private ImagePlus floatImage;
-	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;
 
+	public InvariantFeatureHistogramFilter(ImageProcessor grayImage) {
+		this.grayImage = grayImage;
+	}
+
 	public byte[] performExtraction() {
-		colorImage = floatImage.getProcessor().convertToRGB();
-		grayImage = floatImage.getProcessor().convertToByte(true);
 		int width = grayImage.getWidth();
 		int height = grayImage.getHeight();
 		int margin = 0;
 		int offset, i;
 		double[] invariant = new double[height * width];
 		double max = 0, min = 255;
-		// Create an image to store the calculated features
-		// ImagePlus features = NewImage.createImage("Invariant", width, height,
-		// 1, 24, NewImage.FILL_BLACK);
-		floatImage = NewImage.createFloatImage("FloatImage", width, height, 1,
-				NewImage.FILL_BLACK);
-		floatImage.getProcessor().copyBits(grayImage, 0, 0, Blitter.COPY);
 
 		for (int y = margin; y < (height - margin); y++) {
 			offset = y * width;
@@ -79,13 +73,4 @@ public class InvariantFeatureHistogramFilter {
 		double average = sum / (double) total;
 		return average;
 	}
-
-	public ImagePlus getFloatImage() {
-		return floatImage;
-	}
-
-	public void setFloatImage(ImagePlus floatImage) {
-		this.floatImage = floatImage;
-	}
-
 }

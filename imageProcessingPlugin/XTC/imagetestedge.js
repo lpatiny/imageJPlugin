@@ -1,6 +1,6 @@
 clearLog();
 var list = dir("/XTC/images/png", {
-	filter : ".*png"
+	filter : ".*tif"
 });
 var size = 1;
 for ( var i = 0; i < size; i++) {

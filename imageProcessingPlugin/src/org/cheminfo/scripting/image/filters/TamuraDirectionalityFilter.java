@@ -6,14 +6,13 @@ import ij.process.Blitter;
 import ij.process.ImageProcessor;
 
 public class TamuraDirectionalityFilter {
-	private ImagePlus angles;
-	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;
 
-	public byte[] performExtraction() {
-		colorImage = angles.getProcessor().convertToRGB();
-		grayImage = angles.getProcessor().convertToByte(true);
+	public TamuraDirectionalityFilter(ImageProcessor grayImage) {
+		this.grayImage = grayImage;
+	}
 
+	public byte[] performExtraction() {
 		int width = getGrayImage().getWidth();
 		int height = getGrayImage().getHeight();
 
@@ -78,25 +77,6 @@ public class TamuraDirectionalityFilter {
 		}
 
 		return pixels;
-	}
-
-	/**
-	 * @param angles
-	 *            the angles to set
-	 */
-	public void setAngles(ImagePlus angles) {
-		this.angles = angles;
-	}
-
-	/**
-	 * @return the angles
-	 */
-	public ImagePlus getAngles() {
-		return angles;
-	}
-
-	public ImageProcessor getColorImage() {
-		return colorImage;
 	}
 
 	public ImageProcessor getGrayImage() {

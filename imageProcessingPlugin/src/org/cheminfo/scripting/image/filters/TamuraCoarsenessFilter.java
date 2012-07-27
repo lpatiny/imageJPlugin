@@ -12,15 +12,15 @@ import java.util.ArrayList;
  */
 public class TamuraCoarsenessFilter {
 	private int maxWindowSize = 6;
-	private ImagePlus coarse;
-	private ImageProcessor colorImage;
 	private ImageProcessor grayImage;
 
+	public TamuraCoarsenessFilter(ImageProcessor grayImage) {
+		this.grayImage = grayImage;
+	}
+
 	public byte[] performExtraction() {
-		colorImage = coarse.getProcessor().convertToRGB();
-		grayImage = coarse.getProcessor().convertToByte(true);
-		int width = getColorImage().getWidth();
-		int height = getColorImage().getHeight();
+		int width = getGrayImage().getWidth();
+		int height = getGrayImage().getHeight();
 		byte[] coarseness = new byte[width * height];
 		int margin = 0; // in pixels
 
@@ -131,25 +131,6 @@ public class TamuraCoarsenessFilter {
 	 */
 	public int getMaxWindowSize() {
 		return maxWindowSize;
-	}
-
-	/**
-	 * @param coarse
-	 *            the coarse to set
-	 */
-	public void setCoarse(ImagePlus coarse) {
-		this.coarse = coarse;
-	}
-
-	/**
-	 * @return the coarse
-	 */
-	public ImagePlus getCoarse() {
-		return coarse;
-	}
-
-	public ImageProcessor getColorImage() {
-		return colorImage;
 	}
 
 	public ImageProcessor getGrayImage() {
