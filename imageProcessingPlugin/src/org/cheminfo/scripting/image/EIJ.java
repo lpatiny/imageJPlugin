@@ -138,6 +138,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @param options
 	 *            {method:(0->None,1->Bilinear, 2->Bicubic), background:(name
 	 *            background color), average:(y/n-> Average when downsizing)}
+	 * @return boolean: If it succeed saving or not
 	 */
 	public boolean resize(String size, Object options) {
 		JSONObject parameters = Function.checkParameter(options);
@@ -265,6 +266,10 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return super.getHeight();
 	}
 
+	/**
+	 * Return a copy of the EIJ Image
+	 * @return a copy of the image
+	 */
 	public EIJ copy() {
 		EIJ result = (EIJ) super.clone();
 		result.setImage((new Duplicator()).run(this));
@@ -309,19 +314,25 @@ public class EIJ extends ImagePlus implements Cloneable {
 	public void texture() {
 		switch (texture) {
 		case 0:
-			tamuraTexture();
+			tamura();
 			break;
 		case 1:
 			this.grey();
-			invariantTexture();
+			invariantFeatureHistogram();
 			break;
 		case 2:
 			this.grey();
-			localBinaryTexture();
+			localBinaryPartition();
 			break;
 		}
 	}
 
+	/**
+	 * Check if the path contains the format extension
+	 * @param path 
+	 * @param extension
+	 * @return The path with the extension
+	 */
 	static String updateExtension(String path, String extension) {
 		if (path == null)
 			return null;
@@ -339,7 +350,10 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return path;
 	}
 
-	public void tamuraTexture() {
+	/**
+	 * Apply a tamura filter
+	 */
+	public void tamura() {
 		/* Tamura Coarseness */
 
 		TamuraCoarsenessFilter tamuraCoarseness = new TamuraCoarsenessFilter(
@@ -385,14 +399,20 @@ public class EIJ extends ImagePlus implements Cloneable {
 		this.grey();
 	}
 
-	public void invariantTexture() {
+	/**
+	 * Apply a invariant feature filter
+	 */
+	public void invariantFeatureHistogram() {
 		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter(
 				this.getProcessor().convertToByte(true));
 		byte[] bytes = invariantTexture.performExtraction();
 		this.getProcessor().setPixels(bytes);
 	}
 
-	public void localBinaryTexture() {
+	/**
+	 * Apply a local Binary Partition filter
+	 */
+	public void localBinaryPartition() {
 		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter(
 				this.getProcessor().convertToByte(true));
 		byte[] bytes = localbinary.performExtraction();
