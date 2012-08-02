@@ -3,10 +3,16 @@ package org.cheminfo.scripting.image;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 
 import org.cheminfo.function.Function;
 import org.cheminfo.function.scripting.SecureFileManager;
+import org.cheminfo.scripting.image.extraction.Coordinates;
+import org.cheminfo.scripting.image.extraction.ImageObject;
+import org.cheminfo.scripting.image.extraction.PillExtraction;
 import org.cheminfo.scripting.image.filters.InvariantFeatureHistogramFilter;
 import org.cheminfo.scripting.image.filters.LocalBinaryPartitionFilter;
 import org.cheminfo.scripting.image.filters.TamuraCoarsenessFilter;
@@ -14,17 +20,22 @@ import org.cheminfo.scripting.image.filters.TamuraContrastFilter;
 import org.cheminfo.scripting.image.filters.TamuraDirectionalityFilter;
 import org.json.JSONObject;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.NewImage;
 import ij.io.FileSaver;
+import ij.io.Opener;
 import ij.plugin.ContrastEnhancer;
 import ij.plugin.Duplicator;
+import ij.plugin.filter.RankFilters;
 import ij.process.Blitter;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
+import ij.process.MedianCut;
 
 /**
  * This is an ImageJPlus extended class with extra functionality to load and
@@ -38,6 +49,9 @@ public class EIJ extends ImagePlus implements Cloneable {
 	private String basedir;
 	private String key;
 	int texture = 2;
+	private String filename;
+
+	static final int HSIZE = 32768;
 
 	/**
 	 * The constructor. The filename have to be the full path to file to be
@@ -53,6 +67,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 		super(filename);
 		this.basedir = basedir;
 		this.key = key;
+		this.filename = filename;
 	}
 
 	/**
@@ -268,13 +283,13 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	/**
 	 * Return a copy of the EIJ Image
+	 * 
 	 * @return a copy of the image
+	 * @throws CloneNotSupportedException
 	 */
 	public EIJ copy() {
-		EIJ result = (EIJ) super.clone();
-		result.setImage((new Duplicator()).run(this));
-		result.basedir = this.basedir;
-		result.key = this.key;
+		EIJ result = this.clone();
+		result.setImage(this.duplicate());
 		return result;
 	}
 
@@ -329,7 +344,8 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	/**
 	 * Check if the path contains the format extension
-	 * @param path 
+	 * 
+	 * @param path
 	 * @param extension
 	 * @return The path with the extension
 	 */
@@ -418,5 +434,78 @@ public class EIJ extends ImagePlus implements Cloneable {
 		byte[] bytes = localbinary.performExtraction();
 		this.getProcessor().setPixels(bytes);
 
+	}
+
+	public int getColor() {
+		if (this.getType() != ImagePlus.COLOR_RGB)
+			throw new IllegalArgumentException("Image must be RGB");
+		int color16;
+		int[] pixels = (int[]) ip.getPixels();
+
+		// build 32x32x32 RGB histogram
+		int[] hist = new int[HSIZE];
+		for (int i = 0; i < width * height; i++) {
+			color16 = rgb(pixels[i]);
+			hist[color16]++;
+		}
+		int count = 0;
+		for (int i = 0; i < HSIZE; i++)
+			if (hist[i] > 0)
+				count++;
+		return count;
+	}
+
+	public boolean crop(int x, int y, int width, int height) {
+		if (x >= this.getWidth())
+			return false;
+
+		if (y >= this.getHeight())
+			return false;
+
+		if (width > this.getWidth()) {
+			width = this.getWidth() - x;
+		}
+
+		if (height > this.getHeight()) {
+			height = this.getHeight() - y;
+		}
+
+		setRoi(x, y, width, height);
+		this.setProcessor(this.getProcessor().crop());
+		return true;
+	}
+
+	public EIJ[] split() {
+		PillExtraction extraction = new PillExtraction();
+		Opener opener = new Opener();
+		ImagePlus imp = opener.openImage(this.filename);
+		EIJ[] objects = extraction.extract2(this);
+		return objects;
+	}
+
+	// Convert from 24-bit to 15-bit color
+	private final int rgb(int c) {
+		int r = (c & 0xf80000) >> 19;
+		int g = (c & 0xf800) >> 6;
+		int b = (c & 0xf8) << 7;
+		return b | g | r;
+	}
+
+	public void setImage(ImagePlus imp) {
+		if (imp.getWindow() != null)
+			imp = imp.duplicate();
+		ImageStack stack2 = imp.getStack();
+		if (imp.isHyperStack())
+			setOpenAsHyperStack(true);
+		setStack(stack2, imp.getNChannels(), imp.getNSlices(), imp.getNFrames());
+	}
+
+	public EIJ clone() {
+		EIJ obj = null;
+		try {
+			obj = (EIJ) super.clone();
+		} catch (CloneNotSupportedException ex) {
+		}
+		return obj;
 	}
 }

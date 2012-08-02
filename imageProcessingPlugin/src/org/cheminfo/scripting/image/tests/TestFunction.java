@@ -21,9 +21,10 @@ public class TestFunction {
 		System.out.println(IJ.helloWorld("Castillo"));
 		//EIJ image =new EIJ("","","/usr/local/script/data/lpatiny/data/plant8.jpg");
 		EIJ image =new EIJ("","","/home/yfuquen/Downloads/image_ejecutivo.jpg");
-		int[] hist = image.histogram();
+		/*int[] hist = image.histogram();
 		for(int i=0;i<hist.length;i++)
-			System.out.print(hist[i]+" ");
+			System.out.print(hist[i]+" ");*/
+		image.split();
 		
 		
 	}
