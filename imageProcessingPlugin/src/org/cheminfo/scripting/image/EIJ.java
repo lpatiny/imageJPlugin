@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Vector;
 
 import org.cheminfo.function.Function;
+import org.cheminfo.function.basic.Default;
 import org.cheminfo.function.scripting.SecureFileManager;
 import org.cheminfo.scripting.image.extraction.Coordinates;
 import org.cheminfo.scripting.image.extraction.ImageObject;
@@ -81,65 +82,73 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @return boolean: If it succeed saving or not
 	 */
 	public boolean save(String path, Object options) {
+		try {
 
-		path = SecureFileManager.getValidatedFilename(basedir, key, path);
-		if (path == null)
-			return false;
-		JSONObject parameters = Function.checkParameter(options);
-		int quality = parameters.optInt("quality", 100);
-		FileSaver fileSaver = new FileSaver(this);
-		int dotLoc = path.lastIndexOf('.');
-		String format = path.substring(dotLoc + 1);
-		format = format.toLowerCase(Locale.US);
-		if (format.indexOf("tif") != -1) {
-			if (path != null && !path.endsWith(".tiff"))
-				path = updateExtension(path, ".tif");
-			format = "tif";
-			return fileSaver.saveAsTiff(path);
-		} else if (format.indexOf("jpeg") != -1 || format.indexOf("jpg") != -1) {
-			path = updateExtension(path, ".jpg");
-			format = "jpeg";
-			FileSaver.setJpegQuality(quality);
-			return fileSaver.saveAsJpeg(path);
-		} else if (format.indexOf("gif") != -1) {
-			path = updateExtension(path, ".gif");
-			format = "gif";
-			return fileSaver.saveAsGif(path);
-		} else if (format.indexOf("text") != -1 || format.indexOf("txt") != -1) {
-			if (path != null && !path.endsWith(".xls"))
-				path = updateExtension(path, ".txt");
-			format = "txt";
-			return fileSaver.saveAsText(path);
-		} else if (format.indexOf("zip") != -1) {
-			path = updateExtension(path, ".zip");
-			format = "zip";
-			return fileSaver.saveAsZip(path);
-		} else if (format.indexOf("raw") != -1) {
-			// path = updateExtension(path, ".raw");
-			format = "raw";
-			return fileSaver.saveAsRaw(path);
-		} else if (format.indexOf("bmp") != -1) {
-			path = updateExtension(path, ".bmp");
-			format = "bmp";
-			return fileSaver.saveAsBmp(path);
-		} else if (format.indexOf("fits") != -1) {
-			path = updateExtension(path, ".fits");
-			format = "fits";
-			return fileSaver.saveAsFits(path);
-		} else if (format.indexOf("png") != -1) {
-			path = updateExtension(path, ".png");
-			format = "png";
-			return fileSaver.saveAsPng(path);
-		} else if (format.indexOf("pgm") != -1) {
-			path = updateExtension(path, ".pgm");
-			format = "pgm";
-			return fileSaver.saveAsPgm(path);
-		} else if (format.indexOf("lut") != -1) {
-			path = updateExtension(path, ".lut");
-			format = "lut";
-			return fileSaver.saveAsLut(path);
-		} else
-			return false;
+			path = SecureFileManager.getValidatedFilename(basedir, key, path);
+			if (path == null) {
+				Default.appendError("EIJ::save", "The file path is null");
+				return false;
+			}
+
+			JSONObject parameters = Function.checkParameter(options);
+			int quality = parameters.optInt("quality", 100);
+			FileSaver fileSaver = new FileSaver(this);
+			int dotLoc = path.lastIndexOf('.');
+			String format = path.substring(dotLoc + 1);
+			format = format.toLowerCase(Locale.US);
+			if (format.indexOf("tif") != -1) {
+				if (path != null && !path.endsWith(".tiff"))
+					path = updateExtension(path, ".tif");
+				format = "tif";
+				return fileSaver.saveAsTiff(path);
+			} else if (format.indexOf("jpeg") != -1
+					|| format.indexOf("jpg") != -1) {
+				path = updateExtension(path, ".jpg");
+				format = "jpeg";
+				FileSaver.setJpegQuality(quality);
+				return fileSaver.saveAsJpeg(path);
+			} else if (format.indexOf("gif") != -1) {
+				path = updateExtension(path, ".gif");
+				format = "gif";
+				return fileSaver.saveAsGif(path);
+			} else if (format.indexOf("text") != -1
+					|| format.indexOf("txt") != -1) {
+				if (path != null && !path.endsWith(".xls"))
+					path = updateExtension(path, ".txt");
+				format = "txt";
+				return fileSaver.saveAsText(path);
+			} else if (format.indexOf("zip") != -1) {
+				path = updateExtension(path, ".zip");
+				format = "zip";
+				return fileSaver.saveAsZip(path);
+			} else if (format.indexOf("raw") != -1) {
+				// path = updateExtension(path, ".raw");
+				format = "raw";
+				return fileSaver.saveAsRaw(path);
+			} else if (format.indexOf("bmp") != -1) {
+				path = updateExtension(path, ".bmp");
+				format = "bmp";
+				return fileSaver.saveAsBmp(path);
+			} else if (format.indexOf("fits") != -1) {
+				path = updateExtension(path, ".fits");
+				format = "fits";
+				return fileSaver.saveAsFits(path);
+			} else if (format.indexOf("png") != -1) {
+				path = updateExtension(path, ".png");
+				format = "png";
+				return fileSaver.saveAsPng(path);
+			} else if (format.indexOf("pgm") != -1) {
+				path = updateExtension(path, ".pgm");
+				format = "pgm";
+				return fileSaver.saveAsPgm(path);
+			} else {
+				Default.appendError("EIJ::save",
+						"The file extension is not valid");
+			}
+		} catch (Exception ex) {
+			Default.appendError("EIJ::save", "Error : " + ex.toString());
+		}
+		return false;
 	}
 
 	/**
@@ -156,71 +165,86 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @return boolean: If it succeed saving or not
 	 */
 	public boolean resize(String size, Object options) {
-		JSONObject parameters = Function.checkParameter(options);
-		int interpolationMethod = parameters.optInt("method",
-				ImageProcessor.BILINEAR);
-		String backgroundColor = parameters.optString("background", "");
-		String average = parameters.optString("average", "n");
-		boolean averageWhenDownsizing = false;
-		boolean fillWithBackground = false;
-		double bgValue = 0.0;
-		if (fillWithBackground) {
-			Color bgc = getBackgroundColor(backgroundColor);
-			if (this.getBitDepth() == 8)
-				bgValue = ip.getBestIndex(bgc);
-			else if (this.getBitDepth() == 24)
-				bgValue = bgc.getRGB();
-		} else
-			bgValue = 0.0;
-		if (average.toLowerCase().equals("y")) {
-			averageWhenDownsizing = true;
-		}
-		ip.setInterpolationMethod(interpolationMethod);
-		ip.setBackgroundValue(bgValue);
-		int newHeight = 0;
-		int newWidth = 0;
-		if (size.contains("%")) {
-			Double percentage = 0.0;
-			try {
-				percentage = Double.parseDouble(size.substring(0,
-						size.indexOf("%")));
-				percentage = percentage / 100;
-			} catch (Exception ex) {
-
+		try {
+			JSONObject parameters = Function.checkParameter(options);
+			int interpolationMethod = parameters.optInt("method",
+					ImageProcessor.BILINEAR);
+			String backgroundColor = parameters.optString("background", "");
+			String average = parameters.optString("average", "n");
+			boolean averageWhenDownsizing = false;
+			boolean fillWithBackground = false;
+			double bgValue = 0.0;
+			if (fillWithBackground) {
+				Color bgc = getBackgroundColor(backgroundColor);
+				if (this.getBitDepth() == 8)
+					bgValue = ip.getBestIndex(bgc);
+				else if (this.getBitDepth() == 24)
+					bgValue = bgc.getRGB();
+			} else
+				bgValue = 0.0;
+			if (average.toLowerCase().equals("y")) {
+				averageWhenDownsizing = true;
 			}
-			if (percentage <= 0.0) {
-				return false;
-			}
-			newHeight = (int) (this.getHeight() * percentage);
-			newWidth = (int) (this.getWidth() * percentage);
-		} else {
-			String[] values = size.toLowerCase().split("x");
-			if (values.length > 0) {
+			ip.setInterpolationMethod(interpolationMethod);
+			ip.setBackgroundValue(bgValue);
+			int newHeight = 0;
+			int newWidth = 0;
+			if (size.contains("%")) {
+				Double percentage = 0.0;
 				try {
-					newWidth = Integer.parseInt(values[0].trim());
+					percentage = Double.parseDouble(size.substring(0,
+							size.indexOf("%")));
+					percentage = percentage / 100;
 				} catch (Exception ex) {
-				}
-				try {
-					newHeight = Integer.parseInt(values[1].trim());
-				} catch (Exception ex) {
-				}
 
-				if (newHeight == 0 && newWidth == 0) {
+				}
+				if (percentage <= 0.0) {
+					Default.appendError("EIJ::resize",
+							"The percentage must be equals or greater than 0. Entered: "
+									+ percentage);
 					return false;
-				} else if (newHeight == 0) {
-					newHeight = (int) (newWidth * (double) this.getHeight() / this
-							.getWidth());
-				} else if (newWidth == 0) {
-					newWidth = (int) (newHeight * (double) this.getWidth() / this
-							.getHeight());
+				}
+				newHeight = (int) (this.getHeight() * percentage);
+				newWidth = (int) (this.getWidth() * percentage);
+			} else {
+				String[] values = size.toLowerCase().split("x");
+				if (values.length > 0) {
+					try {
+						newWidth = Integer.parseInt(values[0].trim());
+					} catch (Exception ex) {
+					}
+					try {
+						newHeight = Integer.parseInt(values[1].trim());
+					} catch (Exception ex) {
+					}
+
+					if (newHeight == 0 && newWidth == 0) {
+						Default.appendError("EIJ::resize",
+								"Invalid value for height and / or width. Entered: width "
+										+ values[0].trim() + ", height "
+										+ values[1].trim());
+						return false;
+					} else if (newHeight == 0) {
+						newHeight = (int) (newWidth * (double) this.getHeight() / this
+								.getWidth());
+					} else if (newWidth == 0) {
+						newWidth = (int) (newHeight * (double) this.getWidth() / this
+								.getHeight());
+					}
 				}
 			}
-		}
-		if ((newHeight != this.getHeight() || newWidth != this.getWidth())
-				&& (newHeight > 0 && newWidth > 0)) {
-			this.setProcessor(this.getProcessor().resize(newWidth, newHeight,
-					averageWhenDownsizing));
-			return true;
+			if ((newHeight != this.getHeight() || newWidth != this.getWidth())
+					&& (newHeight > 0 && newWidth > 0)) {
+				this.setProcessor(this.getProcessor().resize(newWidth,
+						newHeight, averageWhenDownsizing));
+				return true;
+			} else {
+				Default.appendError("EIJ::resize",
+						"Invalid value for height and / or width. Values: width "
+								+ newWidth + ", height " + newHeight);
+			}
+		} catch (Exception ex) {
+			Default.appendError("EIJ::resize", "Error: " + ex.toString());
 		}
 		return false;
 	}
@@ -239,16 +263,19 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 *            saturated
 	 */
 	public void contrast(Object options) {
-		ContrastEnhancer ce = new ContrastEnhancer();
-		JSONObject parameters = Function.checkParameter(options);
-		double saturated = parameters.optDouble("saturated", 0.35);
-		String equalize = parameters.optString("equalize", "n");
-		if (equalize.toLowerCase().equals("y")) {
-			ce.equalize(this.getProcessor());
-		} else {
-			ce.stretchHistogram(this.getProcessor(), saturated);
+		try {
+			ContrastEnhancer ce = new ContrastEnhancer();
+			JSONObject parameters = Function.checkParameter(options);
+			double saturated = parameters.optDouble("saturated", 0.35);
+			String equalize = parameters.optString("equalize", "n");
+			if (equalize.toLowerCase().equals("y")) {
+				ce.equalize(this.getProcessor());
+			} else {
+				ce.stretchHistogram(this.getProcessor(), saturated);
+			}
+		} catch (Exception ex) {
+			Default.appendError("EIJ::contrast", "Error: " + ex.toString());
 		}
-
 	}
 
 	/**
@@ -258,9 +285,13 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @return
 	 */
 	public int[] histogram() {
-		ImageProcessor ip = this.getProcessor();
-
-		return ip.getHistogram();
+		try {
+			ImageProcessor ip = this.getProcessor();
+			return ip.getHistogram();
+		} catch (Exception ex) {
+			Default.appendError("EIJ::histogram", "Error: " + ex.toString());
+		}
+		return null;
 	}
 
 	/**
@@ -288,17 +319,26 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @throws CloneNotSupportedException
 	 */
 	public EIJ copy() {
-		EIJ result = this.clone();
-		result.setImage(this.duplicate());
-		return result;
+		try {
+			EIJ result = this.clone();
+			result.setImage(this.duplicate());
+			return result;
+		} catch (Exception ex) {
+			Default.appendError("EIJ::copy", "Error: " + ex.toString());
+		}
+		return null;
 	}
 
 	/**
 	 * Apply a edge filter to the image
 	 */
 	public void edge() {
-		this.grey();
-		ip.findEdges();
+		try {
+			this.grey();
+			ip.findEdges();
+		} catch (Exception ex) {
+			Default.appendError("EIJ::edge", "Error: " + ex.toString());
+		}
 	}
 
 	/**
@@ -308,18 +348,26 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 *            {nbColor:(2-256)}
 	 */
 	public void color(Object options) {
-		JSONObject parameters = Function.checkParameter(options);
-		int nColors = parameters.optInt("nbColor", 256);
-		ImageConverter ic = new ImageConverter(this);
-		ic.convertRGBtoIndexedColor(nColors);
+		try {
+			JSONObject parameters = Function.checkParameter(options);
+			int nColors = parameters.optInt("nbColor", 256);
+			ImageConverter ic = new ImageConverter(this);
+			ic.convertRGBtoIndexedColor(nColors);
+		} catch (Exception ex) {
+			Default.appendError("EIJ::color", "Error: " + ex.toString());
+		}
 	}
 
 	/**
 	 * Apply a grey filter to the image
 	 */
 	public void grey() {
-		ImageConverter ic = new ImageConverter(this);
-		ic.convertToGray8();
+		try {
+			ImageConverter ic = new ImageConverter(this);
+			ic.convertToGray8();
+		} catch (Exception ex) {
+			Default.appendError("EIJ::grey", "Error: " + ex.toString());
+		}
 	}
 
 	/**
@@ -327,18 +375,22 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * 
 	 */
 	public void texture() {
-		switch (texture) {
-		case 0:
-			tamura();
-			break;
-		case 1:
-			this.grey();
-			invariantFeatureHistogram();
-			break;
-		case 2:
-			this.grey();
-			localBinaryPartition();
-			break;
+		try {
+			switch (texture) {
+			case 0:
+				tamura();
+				break;
+			case 1:
+				this.grey();
+				invariantFeatureHistogram();
+				break;
+			case 2:
+				this.grey();
+				localBinaryPartition();
+				break;
+			}
+		} catch (Exception ex) {
+			Default.appendError("EIJ::texture", "Error: " + ex.toString());
 		}
 	}
 
@@ -437,50 +489,65 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	public int getColor() {
-		if (this.getType() != ImagePlus.COLOR_RGB)
-			throw new IllegalArgumentException("Image must be RGB");
-		int color16;
-		int[] pixels = (int[]) ip.getPixels();
+		try {
+			if (this.getType() != ImagePlus.COLOR_RGB)
+				throw new IllegalArgumentException("Image must be RGB");
+			int color16;
+			int[] pixels = (int[]) ip.getPixels();
 
-		// build 32x32x32 RGB histogram
-		int[] hist = new int[HSIZE];
-		for (int i = 0; i < width * height; i++) {
-			color16 = rgb(pixels[i]);
-			hist[color16]++;
+			// build 32x32x32 RGB histogram
+			int[] hist = new int[HSIZE];
+			for (int i = 0; i < width * height; i++) {
+				color16 = rgb(pixels[i]);
+				hist[color16]++;
+			}
+			int count = 0;
+			for (int i = 0; i < HSIZE; i++)
+				if (hist[i] > 0)
+					count++;
+			return count;
+		} catch (Exception ex) {
+			Default.appendError("EIJ::getColor", "Error: " + ex.toString());
 		}
-		int count = 0;
-		for (int i = 0; i < HSIZE; i++)
-			if (hist[i] > 0)
-				count++;
-		return count;
+		return 0;
 	}
 
 	public boolean crop(int x, int y, int width, int height) {
-		if (x >= this.getWidth())
-			return false;
+		try {
+			if (x >= this.getWidth())
+				return false;
 
-		if (y >= this.getHeight())
-			return false;
+			if (y >= this.getHeight())
+				return false;
 
-		if (width > this.getWidth()) {
-			width = this.getWidth() - x;
+			if (width > this.getWidth()) {
+				width = this.getWidth() - x;
+			}
+
+			if (height > this.getHeight()) {
+				height = this.getHeight() - y;
+			}
+
+			setRoi(x, y, width, height);
+			this.setProcessor(this.getProcessor().crop());
+			return true;
+		} catch (Exception ex) {
+			Default.appendError("EIJ::crop", "Error: " + ex.toString());
 		}
-
-		if (height > this.getHeight()) {
-			height = this.getHeight() - y;
-		}
-
-		setRoi(x, y, width, height);
-		this.setProcessor(this.getProcessor().crop());
-		return true;
+		return false;
 	}
 
 	public EIJ[] split() {
-		PillExtraction extraction = new PillExtraction();
-		Opener opener = new Opener();
-		ImagePlus imp = opener.openImage(this.filename);
-		EIJ[] objects = extraction.extract2(this);
-		return objects;
+		try {
+			PillExtraction extraction = new PillExtraction();
+			Opener opener = new Opener();
+			ImagePlus imp = opener.openImage(this.filename);
+			EIJ[] objects = extraction.extract2(this);
+			return objects;
+		} catch (Exception ex) {
+			Default.appendError("EIJ::split", "Error: " + ex.toString());
+		}
+		return null;
 	}
 
 	// Convert from 24-bit to 15-bit color
