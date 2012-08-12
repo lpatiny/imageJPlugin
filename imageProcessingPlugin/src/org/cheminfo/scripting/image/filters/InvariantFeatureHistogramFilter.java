@@ -73,4 +73,14 @@ public class InvariantFeatureHistogramFilter {
 		double average = sum / (double) total;
 		return average;
 	}
+
+	/**
+	 * Apply a invariant feature filter
+	 */
+	public static void invariantFeatureHistogram(ImageProcessor processor) {
+		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter(
+				processor.convertToByte(true));
+		byte[] bytes = invariantTexture.performExtraction();
+		processor.setPixels(bytes);
+	}
 }

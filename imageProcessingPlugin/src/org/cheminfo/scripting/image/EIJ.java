@@ -19,6 +19,7 @@ import org.cheminfo.scripting.image.filters.LocalBinaryPartitionFilter;
 import org.cheminfo.scripting.image.filters.TamuraCoarsenessFilter;
 import org.cheminfo.scripting.image.filters.TamuraContrastFilter;
 import org.cheminfo.scripting.image.filters.TamuraDirectionalityFilter;
+import org.cheminfo.scripting.image.filters.TamutaTextureFilter;
 import org.json.JSONObject;
 
 import ij.IJ;
@@ -49,10 +50,6 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	private String basedir;
 	private String key;
-	int texture = 2;
-	private String filename;
-
-	static final int HSIZE = 32768;
 
 	/**
 	 * The constructor. The filename have to be the full path to file to be
@@ -68,12 +65,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 		super(filename);
 		this.basedir = basedir;
 		this.key = key;
-		this.filename = filename;
 	}
 
 	/**
-	 * This function save the given image in jpeg format. In the options you can
-	 * specify the quality of the resulting image.
+	 * Saves the given image in the format specified by the extension of the
+	 * path. In the options you can specify the quality of the resulting image.
 	 * 
 	 * @param image
 	 * @param path
@@ -152,16 +148,16 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * This function scales the image to the specified width and height. Posible
-	 * values: 200x100: resize to exactly 200x100; x100: proportional resize to
-	 * 100 points height; 200x: proportional resize to 200 points witdh; 50%
+	 * Scales the image to the specified width and height. Posible values:
+	 * 200x100: resize to exactly 200x100; x100: proportional resize to 100
+	 * points height; 200x: proportional resize to 200 points witdh; 50%
 	 * proportional resize to 50%
 	 * 
 	 * @param size
 	 *            (wxh, p%)
 	 * @param options
-	 *            {method:(0->None,1->Bilinear, 2->Bicubic), background:(name
-	 *            background color), average:(y/n-> Average when downsizing)}
+	 *            {method:(0->None,1->Bilinear, 2->Bicubic), average:(y/n->
+	 *            Average when downsizing)}
 	 * @return boolean: If it succeed saving or not
 	 */
 	public boolean resize(String size, Object options) {
@@ -169,24 +165,12 @@ public class EIJ extends ImagePlus implements Cloneable {
 			JSONObject parameters = Function.checkParameter(options);
 			int interpolationMethod = parameters.optInt("method",
 					ImageProcessor.BILINEAR);
-			String backgroundColor = parameters.optString("background", "");
 			String average = parameters.optString("average", "n");
 			boolean averageWhenDownsizing = false;
-			boolean fillWithBackground = false;
-			double bgValue = 0.0;
-			if (fillWithBackground) {
-				Color bgc = getBackgroundColor(backgroundColor);
-				if (this.getBitDepth() == 8)
-					bgValue = ip.getBestIndex(bgc);
-				else if (this.getBitDepth() == 24)
-					bgValue = bgc.getRGB();
-			} else
-				bgValue = 0.0;
 			if (average.toLowerCase().equals("y")) {
 				averageWhenDownsizing = true;
 			}
 			ip.setInterpolationMethod(interpolationMethod);
-			ip.setBackgroundValue(bgValue);
 			int newHeight = 0;
 			int newWidth = 0;
 			if (size.contains("%")) {
@@ -201,7 +185,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 				if (percentage <= 0.0) {
 					Default.appendError("EIJ::resize",
 							"The percentage must be equals or greater than 0. Entered: "
-									+ percentage);
+									+ size.substring(0, size.indexOf("%")));
 					return false;
 				}
 				newHeight = (int) (this.getHeight() * percentage);
@@ -249,13 +233,8 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return false;
 	}
 
-	private Color getBackgroundColor(String backgroundColor) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	/**
-	 * Apply a contrast filter to the image
+	 * Applies a contrast filter to the image
 	 * 
 	 * @param options
 	 *            {saturated:(0-100), equalize:(y/n)}, if equalize is true
@@ -279,7 +258,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * This function returns an histogram for this image.
+	 * Returns an histogram for this image.
 	 * 
 	 * @param numberOfBins
 	 * @return
@@ -295,7 +274,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * This function returns the width of the image
+	 * Returns the width of the image
 	 * 
 	 * @see ij.ImagePlus#getWidth()
 	 */
@@ -304,7 +283,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * This function returns the height of the image
+	 * Returns the height of the image
 	 * 
 	 * @see ij.ImagePlus#getHeight()
 	 */
@@ -313,7 +292,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * Return a copy of the EIJ Image
+	 * Returns a copy of the EIJ Image
 	 * 
 	 * @return a copy of the image
 	 * @throws CloneNotSupportedException
@@ -330,11 +309,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * Apply a edge filter to the image
+	 * Applies a edge filter to the image
 	 */
 	public void edge() {
 		try {
-			this.grey();
+			this.grey("{}");
 			ip.findEdges();
 		} catch (Exception ex) {
 			Default.appendError("EIJ::edge", "Error: " + ex.toString());
@@ -342,7 +321,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * Apply a color filter to the image
+	 * Applies a color filter to the image
 	 * 
 	 * @param options
 	 *            {nbColor:(2-256)}
@@ -359,34 +338,45 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * Apply a grey filter to the image
+	 * Applies a grey filter to the image
+	 * 
+	 * @param options
+	 *            {nbGrey:(2-256)}
 	 */
-	public void grey() {
+	public void grey(Object options) {
 		try {
+			JSONObject parameters = Function.checkParameter(options);
+			// Included to manage nbGrey
+			int nGrey = parameters.optInt("nbGrey", 256);
 			ImageConverter ic = new ImageConverter(this);
-			ic.convertToGray8();
+			ic.convertRGBtoIndexedColor(nGrey);
+			//
+			ImageConverter ic2 = new ImageConverter(this);
+			ic2.convertToGray8();
 		} catch (Exception ex) {
 			Default.appendError("EIJ::grey", "Error: " + ex.toString());
 		}
 	}
 
 	/**
-	 * Apply a texture filter to the image
+	 * Applies a texture filter to the image
 	 * 
 	 */
 	public void texture() {
 		try {
+			int texture = 2;
 			switch (texture) {
 			case 0:
-				tamura();
+				TamutaTextureFilter.tamura(this);
 				break;
 			case 1:
-				this.grey();
-				invariantFeatureHistogram();
+				this.grey("{}");
+				InvariantFeatureHistogramFilter.invariantFeatureHistogram(this
+						.getProcessor());
 				break;
 			case 2:
-				this.grey();
-				localBinaryPartition();
+				this.grey("{}");
+				LocalBinaryPartitionFilter.localBinaryPartition(getProcessor());
 				break;
 			}
 		} catch (Exception ex) {
@@ -395,101 +385,13 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
-	 * Check if the path contains the format extension
+	 * Returns the number of colors
 	 * 
-	 * @param path
-	 * @param extension
-	 * @return The path with the extension
+	 * @return Number of colors
 	 */
-	static String updateExtension(String path, String extension) {
-		if (path == null)
-			return null;
-		int dotIndex = path.lastIndexOf(".");
-		int separatorIndex = path.lastIndexOf(File.separator);
-		if (dotIndex >= 0 && dotIndex > separatorIndex
-				&& (path.length() - dotIndex) <= 5) {
-			if (dotIndex + 1 < path.length()
-					&& Character.isDigit(path.charAt(dotIndex + 1)))
-				path += extension;
-			else
-				path = path.substring(0, dotIndex) + extension;
-		} else
-			path += extension;
-		return path;
-	}
-
-	/**
-	 * Apply a tamura filter
-	 */
-	public void tamura() {
-		/* Tamura Coarseness */
-
-		TamuraCoarsenessFilter tamuraCoarseness = new TamuraCoarsenessFilter(
-				this.getProcessor().convertToByte(true));
-		byte[] coarseness = tamuraCoarseness.performExtraction();
-
-		ImagePlus iCoarseness = NewImage.createByteImage("Coarseness", width,
-				height, 1, NewImage.FILL_BLACK);
-		iCoarseness.getProcessor().setPixels(coarseness);
-
-		/* Tamura Contrast */
-
-		TamuraContrastFilter tamuraContrast = new TamuraContrastFilter(this
-				.getProcessor().convertToByte(true));
-		byte[] contrast = tamuraContrast.performExtraction();
-
-		ImagePlus iContrast = NewImage.createByteImage("Contrast", width,
-				height, 1, NewImage.FILL_BLACK);
-		iContrast.getProcessor().setPixels(contrast);
-
-		TamuraDirectionalityFilter tamuraDirectionality = new TamuraDirectionalityFilter(
-				this.getProcessor().convertToByte(true));
-		byte[] directionality = tamuraDirectionality.performExtraction();
-
-		ImagePlus iDirectionality = NewImage.createByteImage("Directionality",
-				width, height, 1, NewImage.FILL_BLACK);
-		iDirectionality.getProcessor().setPixels(directionality);
-
-		ImageStack stack1 = new ImageStack(width, height);
-		stack1.addSlice("directionality", iDirectionality.getProcessor());
-
-		ImageStack stack2 = new ImageStack(width, height);
-		stack2.addSlice("coarseness", iCoarseness.getProcessor());
-
-		ImageStack stack3 = new ImageStack(width, height);
-		stack3.addSlice("contrast", iContrast.getProcessor());
-
-		ij.plugin.RGBStackMerge merge = new ij.plugin.RGBStackMerge();
-		ImageStack result = merge.mergeStacks(width, height, 1, stack1, stack2,
-				stack3, true);
-		int[] pixels = (int[]) result.getPixels(1);
-		this.getProcessor().setPixels(pixels);
-		this.grey();
-	}
-
-	/**
-	 * Apply a invariant feature filter
-	 */
-	public void invariantFeatureHistogram() {
-		InvariantFeatureHistogramFilter invariantTexture = new InvariantFeatureHistogramFilter(
-				this.getProcessor().convertToByte(true));
-		byte[] bytes = invariantTexture.performExtraction();
-		this.getProcessor().setPixels(bytes);
-	}
-
-	/**
-	 * Apply a local Binary Partition filter
-	 */
-	public void localBinaryPartition() {
-		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter(
-				this.getProcessor().convertToByte(true));
-		byte[] bytes = localbinary.performExtraction();
-		this.getProcessor().setPixels(bytes);
-
-	}
-
 	public int getColor() {
 		try {
+			final int HSIZE = 32768;
 			if (this.getType() != ImagePlus.COLOR_RGB)
 				throw new IllegalArgumentException("Image must be RGB");
 			int color16;
@@ -512,6 +414,22 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return 0;
 	}
 
+	/**
+	 * Crops a image
+	 * 
+	 * @param x
+	 *            horizontal value from which to start cutting
+	 * @param y
+	 *            vertical value from which to start cutting
+	 * @param width
+	 *            width of the new image, if it is greater than the width of the
+	 *            original image minus the value of x, it calculates the width
+	 * @param height
+	 *            height of the new image, if it is greater than the height of
+	 *            the original image minus the value of y, it calculates the
+	 *            height
+	 * @return true for successful crop, false otherwise
+	 */
 	public boolean crop(int x, int y, int width, int height) {
 		try {
 			if (x >= this.getWidth())
@@ -537,11 +455,14 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return false;
 	}
 
+	/**
+	 * Splits a image
+	 * 
+	 * @return an array with the result images, ordered from smallest to largest
+	 */
 	public EIJ[] split() {
 		try {
 			PillExtraction extraction = new PillExtraction();
-			Opener opener = new Opener();
-			ImagePlus imp = opener.openImage(this.filename);
 			EIJ[] objects = extraction.extract2(this);
 			return objects;
 		} catch (Exception ex) {
@@ -550,7 +471,13 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return null;
 	}
 
-	// Convert from 24-bit to 15-bit color
+	/**
+	 * Converts from 24-bit to 15-bit color
+	 * 
+	 * @param c
+	 *            value of the pixel
+	 * @return the rgb value
+	 */
 	private final int rgb(int c) {
 		int r = (c & 0xf80000) >> 19;
 		int g = (c & 0xf800) >> 6;
@@ -558,6 +485,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return b | g | r;
 	}
 
+	/**
+	 * Replaces the image
+	 * 
+	 * @param imp
+	 */
 	public void setImage(ImagePlus imp) {
 		if (imp.getWindow() != null)
 			imp = imp.duplicate();
@@ -567,6 +499,9 @@ public class EIJ extends ImagePlus implements Cloneable {
 		setStack(stack2, imp.getNChannels(), imp.getNSlices(), imp.getNFrames());
 	}
 
+	/**
+	 * Clones EIJ
+	 */
 	public EIJ clone() {
 		EIJ obj = null;
 		try {
@@ -574,5 +509,30 @@ public class EIJ extends ImagePlus implements Cloneable {
 		} catch (CloneNotSupportedException ex) {
 		}
 		return obj;
+	}
+
+	/**
+	 * Checks if the path contains the format extension and adds the extension
+	 * to the path if this had not extension
+	 * 
+	 * @param path
+	 * @param extension
+	 * @return The path with the extension
+	 */
+	static String updateExtension(String path, String extension) {
+		if (path == null)
+			return null;
+		int dotIndex = path.lastIndexOf(".");
+		int separatorIndex = path.lastIndexOf(File.separator);
+		if (dotIndex >= 0 && dotIndex > separatorIndex
+				&& (path.length() - dotIndex) <= 5) {
+			if (dotIndex + 1 < path.length()
+					&& Character.isDigit(path.charAt(dotIndex + 1)))
+				path += extension;
+			else
+				path = path.substring(0, dotIndex) + extension;
+		} else
+			path += extension;
+		return path;
 	}
 }

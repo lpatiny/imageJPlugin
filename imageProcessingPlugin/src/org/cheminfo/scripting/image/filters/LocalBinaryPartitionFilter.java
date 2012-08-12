@@ -71,4 +71,15 @@ public class LocalBinaryPartitionFilter {
 		}
 		return (byte) code;
 	}
+
+	/**
+	 * Apply a local Binary Partition filter
+	 */
+	public static void localBinaryPartition(ImageProcessor processor) {
+		LocalBinaryPartitionFilter localbinary = new LocalBinaryPartitionFilter(
+				processor.convertToByte(true));
+		byte[] bytes = localbinary.performExtraction();
+		processor.setPixels(bytes);
+
+	}
 }
