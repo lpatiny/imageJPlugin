@@ -1,10 +1,10 @@
 package org.cheminfo.scripting.image.filters;
 
-import org.cheminfo.scripting.image.EIJ;
-
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.NewImage;
+
+import org.cheminfo.scripting.image.EIJ;
 
 public class TamutaTextureFilter {
 	/**
@@ -53,6 +53,6 @@ public class TamutaTextureFilter {
 				stack3, true);
 		int[] pixels = (int[]) result.getPixels(1);
 		eij.getProcessor().setPixels(pixels);
-		eij.grey("{}");
+		eij.grey();
 	}
 }

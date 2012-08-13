@@ -1,43 +1,23 @@
 package org.cheminfo.scripting.image;
 
-import java.awt.Color;
-import java.awt.Rectangle;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.io.FileSaver;
+import ij.plugin.ContrastEnhancer;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 
 import org.cheminfo.function.Function;
 import org.cheminfo.function.basic.Default;
 import org.cheminfo.function.scripting.SecureFileManager;
-import org.cheminfo.scripting.image.extraction.Coordinates;
-import org.cheminfo.scripting.image.extraction.ImageObject;
 import org.cheminfo.scripting.image.extraction.PillExtraction;
 import org.cheminfo.scripting.image.filters.InvariantFeatureHistogramFilter;
 import org.cheminfo.scripting.image.filters.LocalBinaryPartitionFilter;
-import org.cheminfo.scripting.image.filters.TamuraCoarsenessFilter;
-import org.cheminfo.scripting.image.filters.TamuraContrastFilter;
-import org.cheminfo.scripting.image.filters.TamuraDirectionalityFilter;
 import org.cheminfo.scripting.image.filters.TamutaTextureFilter;
 import org.json.JSONObject;
-
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.Prefs;
-import ij.gui.NewImage;
-import ij.io.FileSaver;
-import ij.io.Opener;
-import ij.plugin.ContrastEnhancer;
-import ij.plugin.Duplicator;
-import ij.plugin.filter.RankFilters;
-import ij.process.Blitter;
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.ImageConverter;
-import ij.process.ImageProcessor;
-import ij.process.MedianCut;
 
 /**
  * This is an ImageJPlus extended class with extra functionality to load and
@@ -313,7 +293,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 */
 	public void edge() {
 		try {
-			this.grey("{}");
+			this.grey();
 			ip.findEdges();
 		} catch (Exception ex) {
 			Default.appendError("EIJ::edge", "Error: " + ex.toString());
@@ -359,6 +339,21 @@ public class EIJ extends ImagePlus implements Cloneable {
 	}
 
 	/**
+	 * Applies a grey filter to the image
+	 * 
+	 * @param options
+	 *            {nbGrey:(2-256)}
+	 */
+	public void grey() {
+		try {
+			ImageConverter ic2 = new ImageConverter(this);
+			ic2.convertToGray8();
+		} catch (Exception ex) {
+			Default.appendError("EIJ::grey", "Error: " + ex.toString());
+		}
+	}
+
+	/**
 	 * Applies a texture filter to the image
 	 * 
 	 */
@@ -370,12 +365,12 @@ public class EIJ extends ImagePlus implements Cloneable {
 				TamutaTextureFilter.tamura(this);
 				break;
 			case 1:
-				this.grey("{}");
+				this.grey();
 				InvariantFeatureHistogramFilter.invariantFeatureHistogram(this
 						.getProcessor());
 				break;
 			case 2:
-				this.grey("{}");
+				this.grey();
 				LocalBinaryPartitionFilter.localBinaryPartition(getProcessor());
 				break;
 			}
@@ -391,7 +386,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 */
 	public int getColor() {
 		try {
-			final int HSIZE = 32768;
+			final int HSIZE = this.getWidth() * this.getHeight();
 			if (this.getType() != ImagePlus.COLOR_RGB)
 				throw new IllegalArgumentException("Image must be RGB");
 			int color16;

@@ -8,8 +8,6 @@ import java.io.IOException;
 import junit.framework.Assert;
 
 import org.cheminfo.function.scripting.ScriptingInstance;
-import org.cheminfo.scripting.image.EIJ;
-import org.cheminfo.scripting.image.IJ;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -44,7 +42,7 @@ public class TestScripting {
 	public static void main(String[] args) {
 		ScriptingInstance interpreter = new ScriptingInstance("jars/");
 		interpreter.setSafePath("./");
-		String script = getContents(new File("XTC/imagetestsplit.js"));
+		String script = getContents(new File("XTC/imagetestcontrast.js"));
 		JSONObject result = interpreter.runScript(script);
 		System.out.println(result);
 

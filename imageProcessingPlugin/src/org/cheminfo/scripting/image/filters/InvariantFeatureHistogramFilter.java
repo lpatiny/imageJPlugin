@@ -1,8 +1,5 @@
 package org.cheminfo.scripting.image.filters;
 
-import ij.ImagePlus;
-import ij.gui.NewImage;
-import ij.process.Blitter;
 import ij.process.ImageProcessor;
 
 public class InvariantFeatureHistogramFilter {

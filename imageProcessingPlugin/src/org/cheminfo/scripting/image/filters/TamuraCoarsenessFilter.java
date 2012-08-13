@@ -1,11 +1,6 @@
 package org.cheminfo.scripting.image.filters;
 
-import ij.ImagePlus;
-import ij.gui.NewImage;
 import ij.process.ImageProcessor;
-
-import java.awt.Rectangle;
-import java.util.ArrayList;
 
 /**
  * @author jccaicedo

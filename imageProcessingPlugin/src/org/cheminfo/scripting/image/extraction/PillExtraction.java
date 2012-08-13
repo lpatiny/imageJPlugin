@@ -1,17 +1,9 @@
 package org.cheminfo.scripting.image.extraction;
 
-import ij.IJ;
 import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.Roi;
-import ij.io.Opener;
-import ij.plugin.ContrastEnhancer;
 import ij.plugin.filter.RankFilters;
 import ij.process.ImageProcessor;
-import ij.process.StackProcessor;
 
-import java.awt.Rectangle;
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;

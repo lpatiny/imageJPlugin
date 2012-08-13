@@ -1,6 +1,6 @@
 clearLog();
 var list = dir("/XTC/images/png", {
-	filter : ".*jpg"
+	filter : ".*tif"
 });
 var size = list.length;
 var aSize = new Array(size);

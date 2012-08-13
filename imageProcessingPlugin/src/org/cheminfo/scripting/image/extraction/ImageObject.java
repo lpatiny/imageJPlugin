@@ -3,8 +3,6 @@
  */
 package org.cheminfo.scripting.image.extraction;
 
-import org.cheminfo.scripting.image.EIJ;
-
 import ij.ImagePlus;
 
 /**
