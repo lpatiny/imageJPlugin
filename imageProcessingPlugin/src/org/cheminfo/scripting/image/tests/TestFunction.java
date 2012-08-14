@@ -21,7 +21,7 @@ public class TestFunction {
 		// It has to print "Castillo, Hello World!"
 		System.out.println(IJ.helloWorld("Castillo"));
 		EIJ image = new EIJ("", "",
-				"/usr/local/script/data/lpatiny/data/plant8.jpg");
+				"/usr/local/script/data/lpatiny/data/plant8.jpg", new IJ());
 		int[] hist = image.histogram();
 		for (int i = 0; i < hist.length; i++)
 			System.out.print(hist[i] + " ");

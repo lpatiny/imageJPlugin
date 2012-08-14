@@ -42,7 +42,7 @@ public class TestScripting {
 	public static void main(String[] args) {
 		ScriptingInstance interpreter = new ScriptingInstance("jars/");
 		interpreter.setSafePath("./");
-		String script = getContents(new File("XTC/imagetestcontrast.js"));
+		String script = getContents(new File("XTC/imagetestcolors.js"));
 		JSONObject result = interpreter.runScript(script);
 		System.out.println(result);
 

@@ -30,6 +30,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 	private String basedir;
 	private String key;
+	private IJ ij;
+
+	public EIJ() {
+		ij = new IJ();
+	}
 
 	/**
 	 * The constructor. The filename have to be the full path to file to be
@@ -41,10 +46,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @param key
 	 * @param filename
 	 */
-	public EIJ(String basedir, String key, String filename) {
+	public EIJ(String basedir, String key, String filename, IJ ij) {
 		super(filename);
 		this.basedir = basedir;
 		this.key = key;
+		this.ij = ij;
 	}
 
 	/**
@@ -62,11 +68,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 			path = SecureFileManager.getValidatedFilename(basedir, key, path);
 			if (path == null) {
-				Default.appendError("EIJ::save", "The file path is null");
+				ij.appendError("EIJ::save", "The file path is null");
 				return false;
 			}
 
-			JSONObject parameters = Function.checkParameter(options);
+			JSONObject parameters = ij.checkParameter(options);
 			int quality = parameters.optInt("quality", 100);
 			FileSaver fileSaver = new FileSaver(this);
 			int dotLoc = path.lastIndexOf('.');
@@ -118,11 +124,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 				format = "pgm";
 				return fileSaver.saveAsPgm(path);
 			} else {
-				Default.appendError("EIJ::save",
+				ij.appendError("EIJ::save",
 						"The file extension is not valid");
 			}
 		} catch (Exception ex) {
-			Default.appendError("EIJ::save", "Error : " + ex.toString());
+			ij.appendError("EIJ::save", "Error : " + ex.toString());
 		}
 		return false;
 	}
@@ -142,7 +148,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 */
 	public boolean resize(String size, Object options) {
 		try {
-			JSONObject parameters = Function.checkParameter(options);
+			JSONObject parameters = ij.checkParameter(options);
 			int interpolationMethod = parameters.optInt("method",
 					ImageProcessor.BILINEAR);
 			String average = parameters.optString("average", "n");
@@ -163,7 +169,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 
 				}
 				if (percentage <= 0.0) {
-					Default.appendError("EIJ::resize",
+					ij.appendError("EIJ::resize",
 							"The percentage must be equals or greater than 0. Entered: "
 									+ size.substring(0, size.indexOf("%")));
 					return false;
@@ -183,7 +189,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 					}
 
 					if (newHeight == 0 && newWidth == 0) {
-						Default.appendError("EIJ::resize",
+						ij.appendError("EIJ::resize",
 								"Invalid value for height and / or width. Entered: width "
 										+ values[0].trim() + ", height "
 										+ values[1].trim());
@@ -203,12 +209,12 @@ public class EIJ extends ImagePlus implements Cloneable {
 						newHeight, averageWhenDownsizing));
 				return true;
 			} else {
-				Default.appendError("EIJ::resize",
+				ij.appendError("EIJ::resize",
 						"Invalid value for height and / or width. Values: width "
 								+ newWidth + ", height " + newHeight);
 			}
 		} catch (Exception ex) {
-			Default.appendError("EIJ::resize", "Error: " + ex.toString());
+			ij.appendError("EIJ::resize", "Error: " + ex.toString());
 		}
 		return false;
 	}
@@ -224,7 +230,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	public void contrast(Object options) {
 		try {
 			ContrastEnhancer ce = new ContrastEnhancer();
-			JSONObject parameters = Function.checkParameter(options);
+			JSONObject parameters = ij.checkParameter(options);
 			double saturated = parameters.optDouble("saturated", 0.35);
 			String equalize = parameters.optString("equalize", "n");
 			if (equalize.toLowerCase().equals("y")) {
@@ -233,7 +239,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 				ce.stretchHistogram(this.getProcessor(), saturated);
 			}
 		} catch (Exception ex) {
-			Default.appendError("EIJ::contrast", "Error: " + ex.toString());
+			ij.appendError("EIJ::contrast", "Error: " + ex.toString());
 		}
 	}
 
@@ -248,7 +254,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			ImageProcessor ip = this.getProcessor();
 			return ip.getHistogram();
 		} catch (Exception ex) {
-			Default.appendError("EIJ::histogram", "Error: " + ex.toString());
+			ij.appendError("EIJ::histogram", "Error: " + ex.toString());
 		}
 		return null;
 	}
@@ -283,7 +289,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			result.setImage(this.duplicate());
 			return result;
 		} catch (Exception ex) {
-			Default.appendError("EIJ::copy", "Error: " + ex.toString());
+			ij.appendError("EIJ::copy", "Error: " + ex.toString());
 		}
 		return null;
 	}
@@ -296,7 +302,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			this.grey();
 			ip.findEdges();
 		} catch (Exception ex) {
-			Default.appendError("EIJ::edge", "Error: " + ex.toString());
+			ij.appendError("EIJ::edge", "Error: " + ex.toString());
 		}
 	}
 
@@ -308,12 +314,12 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 */
 	public void color(Object options) {
 		try {
-			JSONObject parameters = Function.checkParameter(options);
+			JSONObject parameters = ij.checkParameter(options);
 			int nColors = parameters.optInt("nbColor", 256);
 			ImageConverter ic = new ImageConverter(this);
 			ic.convertRGBtoIndexedColor(nColors);
 		} catch (Exception ex) {
-			Default.appendError("EIJ::color", "Error: " + ex.toString());
+			ij.appendError("EIJ::color", "Error: " + ex.toString());
 		}
 	}
 
@@ -325,7 +331,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 */
 	public void grey(Object options) {
 		try {
-			JSONObject parameters = Function.checkParameter(options);
+			JSONObject parameters = ij.checkParameter(options);
 			// Included to manage nbGrey
 			int nGrey = parameters.optInt("nbGrey", 256);
 			ImageConverter ic = new ImageConverter(this);
@@ -334,7 +340,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			ImageConverter ic2 = new ImageConverter(this);
 			ic2.convertToGray8();
 		} catch (Exception ex) {
-			Default.appendError("EIJ::grey", "Error: " + ex.toString());
+			ij.appendError("EIJ::grey", "Error: " + ex.toString());
 		}
 	}
 
@@ -349,7 +355,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			ImageConverter ic2 = new ImageConverter(this);
 			ic2.convertToGray8();
 		} catch (Exception ex) {
-			Default.appendError("EIJ::grey", "Error: " + ex.toString());
+			ij.appendError("EIJ::grey", "Error: " + ex.toString());
 		}
 	}
 
@@ -375,7 +381,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 				break;
 			}
 		} catch (Exception ex) {
-			Default.appendError("EIJ::texture", "Error: " + ex.toString());
+			ij.appendError("EIJ::texture", "Error: " + ex.toString());
 		}
 	}
 
@@ -404,7 +410,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 					count++;
 			return count;
 		} catch (Exception ex) {
-			Default.appendError("EIJ::getColor", "Error: " + ex.toString());
+			ij.appendError("EIJ::getColor", "Error: " + ex.toString());
 		}
 		return 0;
 	}
@@ -445,7 +451,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			this.setProcessor(this.getProcessor().crop());
 			return true;
 		} catch (Exception ex) {
-			Default.appendError("EIJ::crop", "Error: " + ex.toString());
+			ij.appendError("EIJ::crop", "Error: " + ex.toString());
 		}
 		return false;
 	}
@@ -461,7 +467,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 			EIJ[] objects = extraction.extract2(this);
 			return objects;
 		} catch (Exception ex) {
-			Default.appendError("EIJ::split", "Error: " + ex.toString());
+			ij.appendError("EIJ::split", "Error: " + ex.toString());
 		}
 		return null;
 	}
