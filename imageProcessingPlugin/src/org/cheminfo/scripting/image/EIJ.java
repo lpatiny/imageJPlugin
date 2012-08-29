@@ -10,8 +10,6 @@ import ij.process.ImageProcessor;
 import java.io.File;
 import java.util.Locale;
 
-import org.cheminfo.function.Function;
-import org.cheminfo.function.basic.Default;
 import org.cheminfo.function.scripting.SecureFileManager;
 import org.cheminfo.scripting.image.extraction.PillExtraction;
 import org.cheminfo.scripting.image.filters.InvariantFeatureHistogramFilter;
@@ -125,7 +123,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 				return fileSaver.saveAsPgm(path);
 			} else {
 				ij.appendError("EIJ::save",
-						"The file extension is not valid");
+						"The file extension is not valid. Extension: " + format);
 			}
 		} catch (Exception ex) {
 			ij.appendError("EIJ::save", "Error : " + ex.toString());
@@ -226,17 +224,22 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 *            {saturated:(0-100), equalize:(y/n)}, if equalize is true
 	 *            equalize the image, either stretch image histogram using
 	 *            saturated
+	 * 
 	 */
 	public void contrast(Object options) {
 		try {
 			ContrastEnhancer ce = new ContrastEnhancer();
 			JSONObject parameters = ij.checkParameter(options);
-			double saturated = parameters.optDouble("saturated", 0.35);
-			String equalize = parameters.optString("equalize", "n");
-			if (equalize.toLowerCase().equals("y")) {
+			double saturated = parameters.optDouble("saturated", 0);
+			String equalize = parameters.optString("equalize", "y");
+			if (equalize.toLowerCase().equals("y") && saturated == 0) {
 				ce.equalize(this.getProcessor());
-			} else {
+			} else if (saturated > 0 && saturated <= 100) {
 				ce.stretchHistogram(this.getProcessor(), saturated);
+			} else {
+				ij.appendError("EIJ::contrast",
+						"Invalid value for saturated, value: " + saturated
+								+ ". Valid values: (0,100]");
 			}
 		} catch (Exception ex) {
 			ij.appendError("EIJ::contrast", "Error: " + ex.toString());
@@ -334,8 +337,10 @@ public class EIJ extends ImagePlus implements Cloneable {
 			JSONObject parameters = ij.checkParameter(options);
 			// Included to manage nbGrey
 			int nGrey = parameters.optInt("nbGrey", 256);
-			ImageConverter ic = new ImageConverter(this);
-			ic.convertRGBtoIndexedColor(nGrey);
+			if (nGrey < 256) {
+				ImageConverter ic = new ImageConverter(this);
+				ic.convertRGBtoIndexedColor(nGrey);
+			}
 			//
 			ImageConverter ic2 = new ImageConverter(this);
 			ic2.convertToGray8();
@@ -347,8 +352,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	/**
 	 * Applies a grey filter to the image
 	 * 
-	 * @param options
-	 *            {nbGrey:(2-256)}
+	 * 
 	 */
 	public void grey() {
 		try {
