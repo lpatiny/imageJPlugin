@@ -3,9 +3,9 @@ var list = dir("/XTC/images/png", {
 	filter : ".*tif"
 });
 var size = list.length;
-var aSize = new Array(size);
+var colors = new Array(size);
 for ( var i = 0; i < size; i++) {
 	var image = IJ.load(list[i]);
-	aSize[i] = list[i]+"="+image.getColor();
+	colors[i] = list[i]+"="+image.getColor();
 }
-jexport('size', aSize, 'matrix');
+jexport('colors', colors, 'matrix');

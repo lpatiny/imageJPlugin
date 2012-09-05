@@ -223,7 +223,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @param options
 	 *            {saturated:(0-100), equalize:(y/n)}, if equalize is true
 	 *            equalize the image, either stretch image histogram using
-	 *            saturated
+	 *            saturated, default equalize is true
 	 * 
 	 */
 	public void contrast(Object options) {
@@ -402,7 +402,6 @@ public class EIJ extends ImagePlus implements Cloneable {
 			int color16;
 			int[] pixels = (int[]) ip.getPixels();
 
-			// build 32x32x32 RGB histogram
 			int[] hist = new int[HSIZE];
 			for (int i = 0; i < width * height; i++) {
 				color16 = rgb(pixels[i]);

@@ -1,0 +1,4 @@
+org.cheminfo.scripting.image
+org.cheminfo.scripting.image.extraction
+org.cheminfo.scripting.image.filters
+org.cheminfo.scripting.image.tests

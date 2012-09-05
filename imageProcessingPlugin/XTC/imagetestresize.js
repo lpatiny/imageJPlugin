@@ -7,7 +7,7 @@ for ( var i = 0; i < size; i++) {
 	var image = IJ.load(list[i]);
 	switch (i % 4) {
 	case 0:
-		image.resize("100x100", "{}");
+		image.resize("200x200", "{}");
 		break;
 	case 1:
 		image.resize("150x", "{}");
