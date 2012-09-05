@@ -142,7 +142,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @param options
 	 *            {method:(0->None,1->Bilinear, 2->Bicubic), average:(y/n->
 	 *            Average when downsizing)}
-	 * @return boolean: If it succeed saving or not
+	 * @return boolean: If it succeed resizing or not
 	 */
 	public boolean resize(String size, Object options) {
 		try {
@@ -249,8 +249,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	/**
 	 * Returns an histogram for this image.
 	 * 
-	 * @param numberOfBins
-	 * @return
+	 * @return histogram array
 	 */
 	public int[] histogram() {
 		try {
