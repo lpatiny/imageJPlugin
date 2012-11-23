@@ -4,6 +4,8 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.io.FileSaver;
 import ij.plugin.ContrastEnhancer;
+import ij.plugin.filter.RankFilters;
+import ij.process.AutoThresholder;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 
@@ -34,6 +36,8 @@ public class EIJ extends ImagePlus implements Cloneable {
 		ij = new IJ();
 	}
 
+
+	
 	/**
 	 * The constructor. The filename have to be the full path to file to be
 	 * loaded. The security check have to be done outside this method. The
@@ -51,6 +55,11 @@ public class EIJ extends ImagePlus implements Cloneable {
 		this.ij = ij;
 	}
 
+	
+	public boolean save(String path) {
+		return save(path, null);
+	}
+	
 	/**
 	 * Saves the given image in the format specified by the extension of the
 	 * path. In the options you can specify the quality of the resulting image.
@@ -278,7 +287,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	public int getHeight() {
 		return super.getHeight();
 	}
-
+	
 	/**
 	 * Returns a copy of the EIJ Image
 	 * 
@@ -296,6 +305,32 @@ public class EIJ extends ImagePlus implements Cloneable {
 		return null;
 	}
 
+	public EIJ createMask() {
+		return createMask(null);
+	}
+
+	
+	// check http://rsb.info.nih.gov/ij/developer/api/ij/process/ImageProcessor.html
+	
+	
+	public EIJ createMask(Object options) {
+		try {
+			JSONObject parameters = ij.checkParameter(options);
+			EIJ result = this.clone();
+			result.setImage(this.duplicate());
+			
+			result.ip.setAutoThreshold(AutoThresholder.Method.valueOf("Default"), true);
+			result.ip.autoThreshold();
+		//	RankFilters rf = new RankFilters();
+		//	rf.rank(result.ip, 50.0, RankFilters.OUTLIERS);
+			return result;
+		} catch (Exception ex) {
+			ij.appendError("EIJ::createMask", "Error: " + ex.toString());
+		}
+		return null;
+	}
+	
+	
 	/**
 	 * Applies a edge filter to the image
 	 */
@@ -325,6 +360,10 @@ public class EIJ extends ImagePlus implements Cloneable {
 		}
 	}
 
+	public void color() {
+		color(null);
+	}
+	
 	/**
 	 * Applies a grey filter to the image
 	 * 
@@ -354,12 +393,7 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * 
 	 */
 	public void grey() {
-		try {
-			ImageConverter ic2 = new ImageConverter(this);
-			ic2.convertToGray8();
-		} catch (Exception ex) {
-			ij.appendError("EIJ::grey", "Error: " + ex.toString());
-		}
+		grey(null);
 	}
 
 	/**
@@ -394,6 +428,9 @@ public class EIJ extends ImagePlus implements Cloneable {
 	 * @return Number of colors
 	 */
 	public int getColor() {
+		
+		
+		
 		try {
 			final int HSIZE = this.getWidth() * this.getHeight();
 			if (this.getType() != ImagePlus.COLOR_RGB)

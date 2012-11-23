@@ -25,7 +25,7 @@ public class PillExtraction {
 		ipm = new ImageProcessor[nc][nr];
 		mObjects = new int[nc][nr];
 		List<ImageObject> objects = new Vector<ImageObject>();
-		Vector<Coordinates> toAnalize = new Vector<Coordinates>();
+		Vector<Coordinates> toAnalyze = new Vector<Coordinates>();
 
 		int nObject = 0;
 
@@ -47,63 +47,63 @@ public class PillExtraction {
 					nObject++;
 					int x = m;
 					int y = n;
-					toAnalize.add(new Coordinates(x, y));
+					toAnalyze.add(new Coordinates(x, y));
 					mObjects[x][y] = nObject;
 
-					while (toAnalize.size() > 0) {
-						int j = toAnalize.get(0).getX();
-						int i = toAnalize.get(0).getY();
+					while (toAnalyze.size() > 0) {
+						int j = toAnalyze.get(0).getX();
+						int i = toAnalyze.get(0).getY();
 
 						if (mObjects[j - 1][i] == -1) {
 							x = j - 1;
 							y = i;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j + 1][i] == -1) {
 							x = j + 1;
 							y = i;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j - 1][i - 1] == -1) {
 							x = j - 1;
 							y = i - 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j][i - 1] == -1) {
 							x = j;
 							y = i - 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j + 1][i - 1] == -1) {
 							x = j + 1;
 							y = i - 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j - 1][i + 1] == -1) {
 							x = j - 1;
 							y = i + 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j][i + 1] == -1) {
 							x = j;
 							y = i + 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 						if (mObjects[j + 1][i + 1] == -1) {
 							x = j + 1;
 							y = i + 1;
-							toAnalize.add(new Coordinates(x, y));
+							toAnalyze.add(new Coordinates(x, y));
 							mObjects[x][y] = nObject;
 						}
 
-						toAnalize.remove(0);
+						toAnalyze.remove(0);
 					}
 					// printObjects();
 				}

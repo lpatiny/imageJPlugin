@@ -13,26 +13,7 @@ import org.junit.Test;
 
 public class TestScripting {
 
-	@Test
-	public void test() {
-		// You can run this method for testing the behavior of you functions
-		// inside javascript.
-		// Before using this function, build the .jar by running build.xml. Only
-		// so you will see the changes made in Image.java
-		ScriptingInstance interpreter = new ScriptingInstance(
-				"./workspace/imagePlugin/jars/");
 
-		JSONObject result = interpreter
-				.runScript("var result=Image.helloWorld('Castillo'); jexport('theNametoShow',result)");
-
-		Assert.assertEquals(
-				"{\"result\":{\"theNametoShow\":\"Castillo, Hello World!\"}}",
-				result.toString());
-
-		// It has to print "Castillo, Hello World!"
-		System.out.println(((JSONObject) result.get("result"))
-				.get("theNametoShow"));
-	}
 
 	/**
 	 * Run this Jorge!!!!!
@@ -42,7 +23,7 @@ public class TestScripting {
 	public static void main(String[] args) {
 		ScriptingInstance interpreter = new ScriptingInstance("jars/");
 		interpreter.setSafePath("./");
-		String script = getContents(new File("XTC/imagetestcolors.js"));
+		String script = getContents(new File("tests/createMask.js"));
 		JSONObject result = interpreter.runScript(script);
 		System.out.println(result);
 
