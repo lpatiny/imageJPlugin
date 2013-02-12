@@ -16,14 +16,13 @@ public class TestScripting {
 
 
 	/**
-	 * Run this Jorge!!!!!
 	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		ScriptingInstance interpreter = new ScriptingInstance("jars/");
 		interpreter.setSafePath("./");
-		String script = getContents(new File("tests/createMask.js"));
+		String script = getContents(new File("tests/processBio.js"));
 		JSONObject result = interpreter.runScript(script);
 		System.out.println(result);
 

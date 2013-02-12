@@ -220,7 +220,7 @@ public class PillExtraction {
 		List<ImageObject> objects = extractObjects2(oimp);
 		EIJ[] images = new EIJ[objects.size()];
 		for (int i = 0; i < objects.size(); i++) {
-			EIJ img = imp.clone();
+			EIJ img = imp.duplicate();
 			img.setImage(objects.get(i).getObject());
 			images[i] = img;
 		}

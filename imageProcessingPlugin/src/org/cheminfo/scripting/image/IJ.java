@@ -25,7 +25,7 @@ public class IJ extends Function {
 			return new EIJ(basedir, basedirkey, fullFilename, this);
 		}
 	}
-
+ 
 	/**
 	 * This function accepts a String parameter
 	 * 

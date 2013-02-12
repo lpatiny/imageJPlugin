@@ -5,7 +5,7 @@
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
     <target name="imageJ-full">
-        <jar destfile="./jars/imageJ-full.jar" filesetmanifest="mergewithoutmain">
+        <jar destfile="./jars/imageJPlugin.jar" filesetmanifest="mergewithoutmain">
             <fileset dir="bin">
             	<exclude name="**/test/**" />
             	<exclude name="*/test/*.class" />
@@ -22,7 +22,7 @@
 	<target name="imageJ" depends="imageJ-full">
 		<copy todir="/usr/local/script/plugins">
 		  <fileset dir="./jars/"
-		           includes="imageJ-full.jar"
+		           includes="imageJPlugin.jar"
 		  />
 		</copy>
 	</target>
